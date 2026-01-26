@@ -18,11 +18,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
+import { CalendarDays, Users, FileText, Map, TrendingUp, CheckCircle } from "lucide-react";
 
 const schema = z.object({
   email: z.string().trim().email("Email inválido").max(255),
   password: z.string().min(6, "Mínimo 6 caracteres").max(128),
 });
+
+const features = [
+  { icon: CalendarDays, text: "Agenda inteligente com visão mensal/semanal" },
+  { icon: Users, text: "Funil de vendas visual estilo Kanban" },
+  { icon: Map, text: "Mapa interativo de shows e leads" },
+  { icon: FileText, text: "Gestão completa de contratos" },
+  { icon: TrendingUp, text: "Dashboard com métricas de performance" },
+];
 
 export default function Login() {
   const { user, loading } = useAuth();
@@ -36,7 +45,7 @@ export default function Login() {
   });
 
   if (!loading && user) {
-    return <Navigate to="/app/calendar" replace />;
+    return <Navigate to="/app/dashboard" replace />;
   }
 
   async function onSubmit(values: z.infer<typeof schema>) {
@@ -49,7 +58,7 @@ export default function Login() {
         toast("Não foi possível entrar", { description: error.message });
         return;
       }
-      const to = location?.state?.from ?? "/app/calendar";
+      const to = location?.state?.from ?? "/app/dashboard";
       navigate(to, { replace: true });
       return;
     }
@@ -71,50 +80,74 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto grid min-h-screen w-full max-w-5xl items-center px-4 py-10 md:grid-cols-2 md:gap-8 md:px-6">
-        <div className="fade-up">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight">
-            CRM + Calendário inteligente
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Leads, contratos e agenda do artista em um só lugar — com regras para evitar conflitos.
+      <div className="mx-auto grid min-h-screen w-full max-w-6xl items-center px-4 py-10 lg:grid-cols-2 lg:gap-12 lg:px-8">
+        {/* Left side - Branding */}
+        <div className="fade-up hidden lg:block">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg">
+              RL
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">CRM Rodrigo Lopes</h1>
+              <p className="text-sm text-muted-foreground">Gestão de Shows e Artistas</p>
+            </div>
+          </div>
+
+          <h2 className="text-3xl font-bold tracking-tight mb-4">
+            Sua agenda e negócios
+            <br />
+            <span className="text-primary">em um só lugar</span>
+          </h2>
+          
+          <p className="text-muted-foreground mb-8">
+            CRM completo para gestão de shows, leads, contratos e visualização geográfica 
+            de oportunidades. Tome decisões rápidas com dados em tempo real.
           </p>
 
-          <div className="mt-6 grid gap-3">
-            <div className="rounded-lg border bg-card/70 p-4 shadow-soft">
-              <div className="text-sm font-semibold">O que já está incluído</div>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                <li>Calendário Mês/Semana/Lista com drag-and-drop</li>
-                <li>Resumo do mês (shows, negociações, dias livres, faturamento)</li>
-                <li>Leads (funil) + Contratos simples + base de Financeiro</li>
-                <li>Permissões por perfil (Admin/Comercial/Financeiro)</li>
-              </ul>
-            </div>
+          <div className="space-y-4">
+            {features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <feature.icon className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm">{feature.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle className="h-4 w-4 text-status-confirmed" />
+            <span>Dados seguros e criptografados</span>
           </div>
         </div>
 
-        <Card className="border bg-card/70 p-6 shadow-elev">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div className="text-sm font-semibold tracking-tight">
-                {mode === "login" ? "Entrar" : "Criar conta"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {mode === "login" ? "Acesse seu CRM" : "Crie seu acesso em 1 minuto"}
-              </div>
+        {/* Right side - Login form */}
+        <div className="fade-up lg:pl-8">
+          <div className="lg:hidden flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
+              RL
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setMode((m) => (m === "login" ? "signup" : "login"))}
-            >
-              {mode === "login" ? "Cadastrar" : "Já tenho conta"}
-            </Button>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">CRM Rodrigo Lopes</h1>
+            </div>
           </div>
 
-          <div className="mt-5">
+          <Card className="border bg-card p-8 shadow-elev">
+            <div className="flex items-center justify-between gap-2 mb-6">
+              <div>
+                <h3 className="text-xl font-semibold tracking-tight">
+                  {mode === "login" ? "Entrar" : "Criar conta"}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {mode === "login" 
+                    ? "Acesse seu painel de gestão" 
+                    : "Comece a usar o CRM agora"}
+                </p>
+              </div>
+            </div>
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
                 <FormField
                   control={form.control}
                   name="email"
@@ -122,7 +155,12 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="voce@empresa.com" autoComplete="email" {...field} />
+                        <Input 
+                          placeholder="voce@empresa.com" 
+                          autoComplete="email" 
+                          className="h-11"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -135,17 +173,42 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} {...field} />
+                        <Input 
+                          type="password" 
+                          autoComplete={mode === "login" ? "current-password" : "new-password"} 
+                          className="h-11"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit">{mode === "login" ? "Entrar" : "Criar conta"}</Button>
+                <Button type="submit" className="h-11 text-base font-medium mt-2">
+                  {mode === "login" ? "Entrar" : "Criar conta"}
+                </Button>
               </form>
             </Form>
-          </div>
-        </Card>
+
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMode((m) => (m === "login" ? "signup" : "login"))}
+              >
+                {mode === "login" ? (
+                  <>Não tem conta? <span className="text-primary font-medium">Criar agora</span></>
+                ) : (
+                  <>Já tem conta? <span className="text-primary font-medium">Entrar</span></>
+                )}
+              </button>
+            </div>
+          </Card>
+
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Ao continuar, você concorda com nossos termos de uso e política de privacidade.
+          </p>
+        </div>
       </div>
     </div>
   );

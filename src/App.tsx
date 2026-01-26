@@ -15,6 +15,7 @@ import { LeadsKanbanPage } from "@/pages/LeadsKanban";
 import { ContractsCrudPage } from "@/pages/ContractsCrud";
 import { MapViewPage } from "@/pages/MapView";
 import { FinancialPage } from "@/pages/Financial";
+import { ContactsPage } from "@/pages/Contacts";
 import { ArtistCalendarPage } from "@/components/artist-calendar/ArtistCalendarPage";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
                   <Route path="calendar" element={<ArtistCalendarPage />} />
                   <Route path="leads" element={<LeadsKanbanPage />} />
                   <Route path="contracts" element={<ContractsCrudPage />} />
+                  <Route path="contacts" element={<ContactsPage />} />
                   <Route path="map" element={<MapViewPage />} />
                   <Route path="financial" element={<FinancialPage />} />
                 </Route>
