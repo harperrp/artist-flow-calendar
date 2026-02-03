@@ -17,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { QuickAddMenu } from "./QuickAddMenu";
+import { NotificationBell } from "./NotificationBell";
 
 function TopNavItem({
   to,
@@ -89,15 +91,16 @@ export function AppShell() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <QuickAddMenu />
+            <NotificationBell />
             <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2 hidden sm:flex"
+              variant="ghost"
+              size="icon"
+              className="hidden sm:flex"
               onClick={() => supabase.auth.signOut()}
             >
               <LogOut className="h-4 w-4" />
-              Sair
             </Button>
 
             {/* Mobile menu button */}

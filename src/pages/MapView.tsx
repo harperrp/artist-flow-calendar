@@ -12,11 +12,14 @@ import {
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useCalendarEvents } from "@/hooks/useCrmQueries";
 import { MapPreview, MapMarker } from "@/components/map/MapPreview";
+import { NearbyCitiesModal } from "@/components/map/NearbyCitiesModal";
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
-import { MapPin, Calendar, Phone, Building2, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { sortByDistance } from "@/lib/geo-utils";
+import { MapPin, Calendar, Phone, Building2, ExternalLink, ChevronLeft, ChevronRight, Navigation } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 type StatusFilter = "all" | "negotiation" | "confirmed" | "lead";
 
@@ -28,6 +31,8 @@ export function MapViewPage() {
   const [referenceDate, setReferenceDate] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [nearbyCitiesOpen, setNearbyCitiesOpen] = useState(false);
+  const [selectedOrigin, setSelectedOrigin] = useState<{ city: string; lat: number; lng: number } | null>(null);
 
   const monthStart = startOfMonth(referenceDate);
   const monthEnd = endOfMonth(referenceDate);
@@ -95,6 +100,49 @@ export function MapViewPage() {
       return dbEvents.find((e: any) => e.id === selectedMarker.id);
     }
   }, [selectedMarker, leads, dbEvents]);
+
+  // Calculate nearby cities
+  const nearbyCities = useMemo(() => {
+    if (!selectedOrigin) return [];
+
+    const allLocations = markers
+      .filter((m) => m.lat !== selectedOrigin.lat || m.lng !== selectedOrigin.lng)
+      .map((m) => ({
+        lat: m.lat,
+        lng: m.lng,
+        id: m.id,
+        name: m.city || m.title,
+        state: m.state,
+        status: m.status,
+        type: m.type,
+      }));
+
+    return sortByDistance(allLocations, selectedOrigin.lat, selectedOrigin.lng)
+      .slice(0, 10)
+      .map((loc) => ({
+        ...loc,
+        date: undefined, // We could add date lookup here
+        fee: undefined,
+      }));
+  }, [selectedOrigin, markers]);
+
+  function openNearbyCities() {
+    if (!selectedMarker || !selectedData) return;
+    
+    setSelectedOrigin({
+      city: selectedData.city || selectedData.title,
+      lat: selectedMarker.lat,
+      lng: selectedMarker.lng,
+    });
+    setNearbyCitiesOpen(true);
+  }
+
+  function handleCreateRoute(cities: any[]) {
+    toast.info("Funcionalidade de rota", {
+      description: `Rota com ${cities.length} cidades será implementada em breve!`,
+    });
+    setNearbyCitiesOpen(false);
+  }
 
   function prevMonth() {
     setReferenceDate(subMonths(referenceDate, 1));
@@ -224,22 +272,31 @@ export function MapViewPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {selectedMarker.type === "lead" ? (
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/app/leads">
+                    <Link to="/leads">
                       <ExternalLink className="h-3 w-3 mr-1" />
                       Ver Lead
                     </Link>
                   </Button>
                 ) : (
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/app/calendar">
+                    <Link to="/calendar">
                       <Calendar className="h-3 w-3 mr-1" />
                       Ver Agenda
                     </Link>
                   </Button>
                 )}
+                <Button 
+                  size="sm" 
+                  variant="secondary"
+                  onClick={openNearbyCities}
+                  className="gap-1"
+                >
+                  <Navigation className="h-3 w-3" />
+                  Cidades Próximas
+                </Button>
               </div>
             </div>
           ) : (
@@ -273,6 +330,15 @@ export function MapViewPage() {
           <div className="text-xs text-muted-foreground">Em negociação</div>
         </Card>
       </div>
+
+      {/* Nearby Cities Modal */}
+      <NearbyCitiesModal
+        open={nearbyCitiesOpen}
+        onOpenChange={setNearbyCitiesOpen}
+        originCity={selectedOrigin?.city || ""}
+        nearbyCities={nearbyCities}
+        onCreateRoute={handleCreateRoute}
+      />
     </div>
   );
 }
