@@ -19,6 +19,8 @@ import {
 import { useState } from "react";
 import { QuickAddMenu } from "./QuickAddMenu";
 import { NotificationBell } from "./NotificationBell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { GlobalSearch } from "@/components/ui/global-search";
 
 function TopNavItem({
   to,
@@ -91,9 +93,11 @@ export function AppShell() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <GlobalSearch />
             <QuickAddMenu />
             <NotificationBell />
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"

@@ -8,11 +8,13 @@ import { useLeads } from "@/hooks/useCrmQueries";
 import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, MapPin, Calendar, DollarSign, Building2, Edit2, TrendingUp } from "lucide-react";
+import { Plus, MapPin, Calendar, DollarSign, Building2, Edit2, TrendingUp, Handshake } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
 import { mockLeads } from "@/lib/mock-data";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ExportButton } from "@/components/ui/export-button";
 import type { FunnelStage } from "@/lib/calendar-types";
 
 const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
@@ -210,12 +212,27 @@ export function LeadsKanbanPage() {
               <span className="font-bold text-primary">{formatMoneyBRL(totalPipeline)}</span>
             </div>
           </Card>
+          <ExportButton type="leads" data={displayLeads} />
           <Button onClick={openCreateDialog} className="gap-2">
             <Plus className="h-4 w-4" />
             Novo Lead
           </Button>
         </div>
       </div>
+
+      {/* Empty State */}
+      {leads.length === 0 && (
+        <EmptyState
+          icon={Handshake}
+          title="Nenhum lead cadastrado"
+          description="Comece adicionando seu primeiro lead para gerenciar seu funil de vendas."
+          action={{
+            label: "Criar primeiro lead",
+            onClick: openCreateDialog,
+          }}
+          className="my-8"
+        />
+      )}
 
       {/* Kanban Board */}
       <DragDropContext onDragEnd={handleDragEnd}>
