@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { MapPreview } from "@/components/map/MapPreview";
 import { DashboardStats } from "@/components/dashboard/StatsCards";
 import { UpcomingShows } from "@/components/dashboard/UpcomingShows";
+import { PendingTasks } from "@/components/dashboard/PendingTasks";
+import { RecentActivities } from "@/components/dashboard/RecentActivities";
 import {
   ShowsPerMonthChart,
   RevenueChart,
@@ -135,6 +137,12 @@ export function DashboardPage() {
         </Card>
 
         <UpcomingShows events={monthEvents} />
+      </div>
+
+      {/* Tasks + Activities */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PendingTasks />
+        <RecentActivities />
       </div>
     </div>
   );
