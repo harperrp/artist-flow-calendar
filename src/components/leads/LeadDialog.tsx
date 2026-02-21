@@ -24,6 +24,7 @@ import type { FunnelStage } from "@/lib/calendar-types";
 
 const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
 const CONTRACTOR_TYPES = ["Prefeitura", "Casa de Show", "Evento Privado", "Festival", "Outro"];
+const ORIGIN_OPTIONS = ["WhatsApp", "Kommo", "Instagram", "Site", "Indicação", "Telefone", "Outro"];
 const STATES = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
   "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
@@ -35,6 +36,7 @@ const schema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   venue_name: z.string().optional(),
+  event_name: z.string().optional(),
   event_date: z.string().optional(),
   fee: z.coerce.number().optional(),
   contact_phone: z.string().optional(),
@@ -64,6 +66,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
       city: "",
       state: "",
       venue_name: "",
+      event_name: "",
       event_date: "",
       fee: undefined,
       contact_phone: "",
@@ -83,6 +86,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           city: initialData.city || "",
           state: initialData.state || "",
           venue_name: initialData.venue_name || "",
+          event_name: initialData.event_name || "",
           event_date: initialData.event_date || "",
           fee: initialData.fee || undefined,
           contact_phone: initialData.contact_phone || "",
@@ -98,6 +102,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           city: "",
           state: "",
           venue_name: "",
+          event_name: "",
           event_date: "",
           fee: undefined,
           contact_phone: "",
@@ -180,6 +185,12 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
               <Input id="venue_name" {...form.register("venue_name")} placeholder="Nome da casa de show" />
             </div>
 
+            {/* Event Name */}
+            <div className="space-y-2">
+              <Label htmlFor="event_name">Nome do Evento</Label>
+              <Input id="event_name" {...form.register("event_name")} placeholder="Ex: Festival de Verão 2026" />
+            </div>
+
             {/* Event Date */}
             <div className="space-y-2">
               <Label htmlFor="event_date">Data Pretendida</Label>
@@ -223,9 +234,21 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
             </div>
 
             {/* Origin */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="origin">Origem do Lead</Label>
-              <Input id="origin" {...form.register("origin")} placeholder="Ex: Instagram, indicação, site..." />
+            <div className="space-y-2">
+              <Label>Origem do Lead</Label>
+              <Select
+                value={form.watch("origin") || ""}
+                onValueChange={(v) => form.setValue("origin", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a origem..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORIGIN_OPTIONS.map((o) => (
+                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Notes */}

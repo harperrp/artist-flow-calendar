@@ -354,6 +354,7 @@ export type Database = {
           created_at: string
           created_by: string
           event_date: string | null
+          event_name: string | null
           fee: number | null
           id: string
           latitude: number | null
@@ -377,6 +378,7 @@ export type Database = {
           created_at?: string
           created_by: string
           event_date?: string | null
+          event_name?: string | null
           fee?: number | null
           id?: string
           latitude?: number | null
@@ -400,6 +402,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           event_date?: string | null
+          event_name?: string | null
           fee?: number | null
           id?: string
           latitude?: number | null

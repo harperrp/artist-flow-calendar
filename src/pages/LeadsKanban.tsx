@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { useLeads } from "@/hooks/useCrmQueries";
 import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, MapPin, Calendar, DollarSign, Building2, Edit2, TrendingUp, Handshake, Tag } from "lucide-react";
+import { Plus, MapPin, Calendar, DollarSign, Building2, Edit2, TrendingUp, Handshake, Tag, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
@@ -20,6 +20,7 @@ import { AdvancedFilters, useFilteredData, type FilterConfig } from "@/component
 import { TagManager } from "@/components/data/TagManager";
 import { CompletenessIndicator, LEAD_REQUIRED_FIELDS, LEAD_OPTIONAL_FIELDS } from "@/components/data/CompletenessIndicator";
 import { useEntityTags } from "@/hooks/useDataOrganization";
+import { useQueryClient } from "@tanstack/react-query";
 import type { FunnelStage } from "@/lib/calendar-types";
 
 const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
@@ -70,6 +71,32 @@ export function LeadsKanbanPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any>(null);
   const [filters, setFilters] = useState<Record<string, any>>({});
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for leads
+  useEffect(() => {
+    if (!activeOrgId) return;
+
+    const channel = supabase
+      .channel(`leads-realtime-${activeOrgId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "leads",
+          filter: `organization_id=eq.${activeOrgId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["leads", activeOrgId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeOrgId, queryClient]);
 
   // Use mock data if no real data exists
   const displayLeads = leads.length > 0 ? leads : mockLeads;
@@ -347,6 +374,21 @@ export function LeadsKanbanPage() {
                                   </Button>
                                 </div>
 
+                                {/* Origin Badge */}
+                                {lead.origin && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                  >
+                                    {lead.origin === "Kommo" || lead.origin === "WhatsApp" ? (
+                                      <MessageCircle className="h-3 w-3 mr-1" />
+                                    ) : (
+                                      <Tag className="h-3 w-3 mr-1" />
+                                    )}
+                                    {lead.origin}
+                                  </Badge>
+                                )}
+
                                 {/* Type */}
                                 {lead.contractor_type && (
                                   <Badge 
@@ -374,12 +416,33 @@ export function LeadsKanbanPage() {
                                   </div>
                                 )}
 
+                                {/* Event Name */}
+                                {lead.event_name && (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground italic">
+                                    🎤 {lead.event_name}
+                                  </div>
+                                )}
+
                                 {/* Fee */}
                                 {lead.fee && (
                                   <div className="flex items-center gap-1 text-sm font-bold text-status-confirmed">
                                     <DollarSign className="h-3 w-3" />
                                     {formatMoneyBRL(lead.fee)}
                                   </div>
+                                )}
+
+                                {/* WhatsApp Link */}
+                                {lead.contact_phone && (
+                                  <a
+                                    href={`https://wa.me/${lead.contact_phone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 hover:underline transition-colors"
+                                  >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                    WhatsApp
+                                  </a>
                                 )}
 
                                 {/* Tags */}
