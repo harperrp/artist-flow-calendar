@@ -16,6 +16,8 @@ import { ContactsPage } from "@/pages/Contacts";
 import { ArtistCalendarPage } from "@/components/artist-calendar/ArtistCalendarPage";
 import { TeamPage } from "@/pages/Team";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -30,18 +32,21 @@ const App = () => (
             <Routes>
               {/* Landing Page */}
               <Route path="/" element={<LandingPage />} />
-              
-              {/* App Routes */}
-              <Route path="/app" element={<AppShell />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="calendar" element={<ArtistCalendarPage />} />
-                <Route path="leads" element={<LeadsKanbanPage />} />
-                <Route path="contracts" element={<ContractsCrudPage />} />
-                <Route path="contacts" element={<ContactsPage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="map" element={<MapViewPage />} />
-                <Route path="financial" element={<FinancialPage />} />
+              <Route path="/login" element={<Login />} />
+
+              {/* Protected App Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/app" element={<AppShell />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="calendar" element={<ArtistCalendarPage />} />
+                  <Route path="leads" element={<LeadsKanbanPage />} />
+                  <Route path="contracts" element={<ContractsCrudPage />} />
+                  <Route path="contacts" element={<ContactsPage />} />
+                  <Route path="team" element={<TeamPage />} />
+                  <Route path="map" element={<MapViewPage />} />
+                  <Route path="financial" element={<FinancialPage />} />
+                </Route>
               </Route>
 
               <Route path="*" element={<NotFound />} />

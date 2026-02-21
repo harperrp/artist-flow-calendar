@@ -20,9 +20,16 @@ import {
 import { toast } from "sonner";
 import { CalendarDays, Users, FileText, Map, TrendingUp, CheckCircle } from "lucide-react";
 
-const schema = z.object({
+const loginSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255),
   password: z.string().min(6, "Mínimo 6 caracteres").max(128),
+  displayName: z.string().optional(),
+});
+
+const signupSchema = z.object({
+  email: z.string().trim().email("Email inválido").max(255),
+  password: z.string().min(6, "Mínimo 6 caracteres").max(128),
+  displayName: z.string().trim().min(2, "Mínimo 2 caracteres").max(100),
 });
 
 const features = [
@@ -39,16 +46,22 @@ export default function Login() {
   const navigate = useNavigate();
   const [mode, setMode] = React.useState<"login" | "signup">("login");
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+  const currentSchema = mode === "signup" ? signupSchema : loginSchema;
+  const form = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(currentSchema as any),
+    defaultValues: { email: "", password: "", displayName: "" },
   });
+
+  // Reset form when mode changes
+  React.useEffect(() => {
+    form.reset({ email: "", password: "", displayName: "" });
+  }, [mode]);
 
   if (!loading && user) {
     return <Navigate to="/app/dashboard" replace />;
   }
 
-  async function onSubmit(values: z.infer<typeof schema>) {
+  async function onSubmit(values: z.infer<typeof signupSchema>) {
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
@@ -66,14 +79,17 @@ export default function Login() {
     const { error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
-      options: { emailRedirectTo: window.location.origin },
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { display_name: values.displayName },
+      },
     });
     if (error) {
       toast("Não foi possível cadastrar", { description: error.message });
       return;
     }
     toast("Conta criada", {
-      description: "Você já pode entrar. Seu CRM foi inicializado automaticamente.",
+      description: "Verifique seu email para confirmar o cadastro.",
     });
     setMode("login");
   }
@@ -148,6 +164,26 @@ export default function Login() {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
+                {mode === "signup" && (
+                  <FormField
+                    control={form.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Seu nome completo"
+                            autoComplete="name"
+                            className="h-11"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="email"
