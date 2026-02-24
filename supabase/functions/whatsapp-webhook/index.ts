@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -34,12 +33,11 @@ Deno.serve(async (req) => {
   if (req.method === "POST") {
     try {
       const body = await req.json();
-
-      // Extract messages from the WhatsApp Cloud API payload
       const entries = body?.entry ?? [];
       const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
       let leadsCreated = 0;
+      let messagesStored = 0;
 
       for (const entry of entries) {
         const changes = entry?.changes ?? [];
@@ -53,28 +51,48 @@ Deno.serve(async (req) => {
           const messages = value.messages ?? [];
 
           for (const msg of messages) {
-            const waId = msg.from; // phone number (wa_id)
-            const contact = contacts.find(
-              (c: any) => c.wa_id === waId
-            );
-            const displayName =
-              contact?.profile?.name ?? `WhatsApp ${waId}`;
+            const waId = msg.from;
+            const contact = contacts.find((c: any) => c.wa_id === waId);
+            const displayName = contact?.profile?.name ?? `WhatsApp ${waId}`;
 
-            // Check if a lead with this phone already exists in any org
-            const { data: existing } = await supabase
-              .from("leads")
-              .select("id")
-              .eq("contact_phone", waId)
-              .maybeSingle();
+            // Extract message content based on type
+            let messageText = "";
+            let messageType = msg.type || "text";
+            let mediaUrl: string | null = null;
 
-            if (existing) {
-              console.log(`Lead already exists for ${waId}, skipping`);
-              continue;
+            switch (msg.type) {
+              case "text":
+                messageText = msg.text?.body ?? "";
+                break;
+              case "image":
+                messageText = msg.image?.caption ?? "[Imagem]";
+                mediaUrl = msg.image?.id ?? null;
+                break;
+              case "audio":
+                messageText = "[Áudio]";
+                mediaUrl = msg.audio?.id ?? null;
+                break;
+              case "video":
+                messageText = msg.video?.caption ?? "[Vídeo]";
+                mediaUrl = msg.video?.id ?? null;
+                break;
+              case "document":
+                messageText = msg.document?.filename ?? "[Documento]";
+                mediaUrl = msg.document?.id ?? null;
+                break;
+              case "reaction":
+                messageText = `Reação: ${msg.reaction?.emoji ?? ""}`;
+                messageType = "reaction";
+                break;
+              case "sticker":
+                messageText = "[Sticker]";
+                mediaUrl = msg.sticker?.id ?? null;
+                break;
+              default:
+                messageText = `[${msg.type}]`;
             }
 
-            // We need an organization_id and created_by.
-            // Use the first org available (service role can query all).
-            // In production, you'd map this to a specific org.
+            // Get first org (service role can query all)
             const { data: org } = await supabase
               .from("organizations")
               .select("id, created_by")
@@ -86,31 +104,73 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            const messageText =
-              msg.type === "text" ? msg.text?.body ?? "" : `[${msg.type}]`;
+            // Check if lead already exists
+            const { data: existing } = await supabase
+              .from("leads")
+              .select("id")
+              .eq("contact_phone", waId)
+              .eq("organization_id", org.id)
+              .maybeSingle();
 
-            const { error } = await supabase.from("leads").insert({
-              contractor_name: displayName,
-              contact_phone: waId,
-              origin: "WhatsApp",
-              stage: "Prospecção",
-              organization_id: org.id,
-              created_by: org.created_by,
-              notes: `Primeira mensagem: ${messageText.substring(0, 500)}`,
-            });
+            let leadId: string;
 
-            if (error) {
-              console.error("Error creating lead:", error.message);
+            if (existing) {
+              leadId = existing.id;
+              // Update timestamp
+              await supabase
+                .from("leads")
+                .update({ updated_at: new Date().toISOString() })
+                .eq("id", leadId);
             } else {
+              // Create new lead
+              const { data: newLead, error: leadErr } = await supabase
+                .from("leads")
+                .insert({
+                  contractor_name: displayName,
+                  contact_phone: waId,
+                  origin: "WhatsApp",
+                  stage: "Prospecção",
+                  organization_id: org.id,
+                  created_by: org.created_by,
+                  notes: `Primeira mensagem: ${messageText.substring(0, 500)}`,
+                })
+                .select("id")
+                .single();
+
+              if (leadErr) {
+                console.error("Error creating lead:", leadErr.message);
+                continue;
+              }
+              leadId = newLead.id;
               leadsCreated++;
               console.log(`Lead created for ${displayName} (${waId})`);
+            }
+
+            // Store message in lead_messages
+            const { error: msgErr } = await supabase
+              .from("lead_messages")
+              .insert({
+                lead_id: leadId,
+                organization_id: org.id,
+                wa_id: waId,
+                direction: "inbound",
+                message_text: messageText.substring(0, 2000),
+                message_type: messageType,
+                media_url: mediaUrl,
+                raw_payload: msg,
+              });
+
+            if (msgErr) {
+              console.error("Error storing message:", msgErr.message);
+            } else {
+              messagesStored++;
             }
           }
         }
       }
 
       return new Response(
-        JSON.stringify({ ok: true, leads_created: leadsCreated }),
+        JSON.stringify({ ok: true, leads_created: leadsCreated, messages_stored: messagesStored }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (err) {

@@ -343,6 +343,136 @@ export type Database = {
           },
         ]
       }
+      finance_transactions: {
+        Row: {
+          amount: number
+          category: string
+          contract_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          paid_at: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          contract_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          paid_at?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_messages: {
+        Row: {
+          created_at: string
+          direction: string
+          id: string
+          lead_id: string
+          media_url: string | null
+          message_text: string | null
+          message_type: string
+          organization_id: string
+          raw_payload: Json | null
+          wa_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lead_id: string
+          media_url?: string | null
+          message_text?: string | null
+          message_type?: string
+          organization_id: string
+          raw_payload?: Json | null
+          wa_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lead_id?: string
+          media_url?: string | null
+          message_text?: string | null
+          message_type?: string
+          organization_id?: string
+          raw_payload?: Json | null
+          wa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           city: string | null
