@@ -23,6 +23,7 @@ import {
   DollarSign,
   Building2,
   MessageSquare,
+  MessageCircle,
   Clock,
   CheckCircle2,
   Circle,
@@ -35,6 +36,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
+import { LeadMessagesThread } from "./LeadMessagesThread";
 
 interface Activity {
   id: string;
@@ -224,6 +226,10 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
             <Activity className="h-4 w-4" />
             Timeline
           </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="gap-2">
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="gap-2">
             <ListTodo className="h-4 w-4" />
             Tarefas
@@ -264,6 +270,11 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
               })}
             </div>
           </ScrollArea>
+        </TabsContent>
+
+        {/* WhatsApp Tab */}
+        <TabsContent value="whatsapp" className="flex-1 m-0">
+          <LeadMessagesThread leadId={lead.id} />
         </TabsContent>
 
         {/* Tasks Tab */}
