@@ -169,6 +169,72 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          city: string | null
+          contract_id: string | null
+          contract_status: Database["public"]["Enums"]["contract_status_pt"] | null
+          created_at: string
+          created_by: string
+          end_at: string | null
+          fee: number | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          owner_id: string | null
+          stage: Database["public"]["Enums"]["funnel_stage"] | null
+          start_at: string
+          state: string | null
+          status: Database["public"]["Enums"]["event_status_pt"]
+          title: string
+          updated_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          contract_id?: string | null
+          contract_status?: Database["public"]["Enums"]["contract_status_pt"] | null
+          created_at?: string
+          created_by: string
+          end_at?: string | null
+          fee?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          owner_id?: string | null
+          stage?: Database["public"]["Enums"]["funnel_stage"] | null
+          start_at: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["event_status_pt"]
+          title: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          contract_id?: string | null
+          contract_status?: Database["public"]["Enums"]["contract_status_pt"] | null
+          created_at?: string
+          created_by?: string
+          end_at?: string | null
+          fee?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          stage?: Database["public"]["Enums"]["funnel_stage"] | null
+          start_at?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["event_status_pt"]
+          title?: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           company: string | null
@@ -418,6 +484,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          category: string
+          contract_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          organization_id: string
+          owner_id: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["payment_status_pt"]
+          type: Database["public"]["Enums"]["payment_type_pt"]
+          updated_at: string
+          vencimento: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          contract_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id: string
+          owner_id?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status_pt"]
+          type: Database["public"]["Enums"]["payment_type_pt"]
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status_pt"]
+          type?: Database["public"]["Enums"]["payment_type_pt"]
+          updated_at?: string
+          vencimento?: string | null
+        }
+        Relationships: []
       }
       lead_messages: {
         Row: {
@@ -677,6 +803,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          role: Database["public"]["Enums"]["app_role"]
           updated_at: string
         }
         Insert: {
@@ -685,6 +812,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
         Update: {
@@ -693,6 +821,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
         Relationships: []
@@ -1060,7 +1189,11 @@ export type Database = {
         | "tag_removed"
       app_role: "admin" | "comercial" | "financeiro"
       contract_status: "pending" | "signed" | "canceled"
+      contract_status_pt: "pendente" | "assinado" | "cancelado"
       event_status: "negotiation" | "confirmed" | "blocked" | "hold"
+      event_status_pt: "negociacao" | "confirmado" | "bloqueado" | "aguardando"
+      payment_status_pt: "pendente" | "pago" | "atrasado" | "cancelado"
+      payment_type_pt: "receita" | "despesa"
       funnel_stage:
         | "Prospecção"
         | "Contato"
@@ -1208,7 +1341,11 @@ export const Constants = {
       ],
       app_role: ["admin", "comercial", "financeiro"],
       contract_status: ["pending", "signed", "canceled"],
+      contract_status_pt: ["pendente", "assinado", "cancelado"],
       event_status: ["negotiation", "confirmed", "blocked", "hold"],
+      event_status_pt: ["negociacao", "confirmado", "bloqueado", "aguardando"],
+      payment_status_pt: ["pendente", "pago", "atrasado", "cancelado"],
+      payment_type_pt: ["receita", "despesa"],
       funnel_stage: [
         "Prospecção",
         "Contato",

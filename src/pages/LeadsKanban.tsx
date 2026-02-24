@@ -168,12 +168,12 @@ export function LeadsKanbanPage() {
     if (newStage === "Negociação" && lead.event_date) {
       const user = (await supabase.auth.getUser()).data.user;
       if (user) {
-        await db.from("calendar_events").insert({
+        await db.from("events").insert({
           organization_id: activeOrgId,
           lead_id: leadId,
           title: lead.contractor_name,
-          status: "negotiation",
-          start_time: new Date(lead.event_date).toISOString(),
+          status: "negociacao",
+          start_at: new Date(lead.event_date).toISOString(),
           city: lead.city,
           state: lead.state,
           fee: lead.fee,
@@ -190,8 +190,8 @@ export function LeadsKanbanPage() {
     // If moved to "Fechado", update calendar event to confirmed
     if (newStage === "Fechado") {
       await db
-        .from("calendar_events")
-        .update({ status: "confirmed" })
+        .from("events")
+        .update({ status: "confirmado" })
         .eq("lead_id", leadId);
       toast.success("Show confirmado no calendário!");
     }
