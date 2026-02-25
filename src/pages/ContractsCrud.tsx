@@ -112,7 +112,7 @@ export function ContractsCrudPage() {
       }).eq("id", editingContract.id);
       if (error) { toast.error("Erro ao atualizar", { description: error.message }); return; }
       if (data.status === "signed") {
-        await db.from("calendar_events").update({ status: "confirmed" }).eq("lead_id", data.lead_id);
+        await db.from("events").update({ status: "confirmado" }).eq("lead_id", data.lead_id);
         await db.from("leads").update({ stage: "Fechado" }).eq("id", data.lead_id);
       }
       toast.success("Contrato atualizado");

@@ -140,9 +140,9 @@ export function ArtistCalendarPage() {
     if (!nextStart) return;
 
     try {
-      const { error } = await db.from("calendar_events").update({ start_time: nextStart }).eq("id", id);
+      const { error } = await db.from("events").update({ start_at: nextStart }).eq("id", id);
       if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
       if (selected?.id === id) setSelected((s) => (s ? { ...s, start: nextStart } : s));
     } catch (e: any) {
       toast("Não foi possível mover o evento", { description: e?.message ?? "" });
@@ -163,43 +163,50 @@ export function ArtistCalendarPage() {
       const payload = {
         id: result.event.id,
         organization_id: activeOrgId,
-        status: result.event.status,
+        status:
+          result.event.status === "confirmed"
+            ? "confirmado"
+            : result.event.status === "negotiation"
+              ? "negociacao"
+              : result.event.status === "blocked"
+                ? "bloqueado"
+                : "aguardando",
         title: result.event.title,
-        start_time: result.event.start,
-        end_time: result.event.end ?? null,
+        start_at: result.event.start,
+        end_at: result.event.end ?? null,
         city: result.event.city ?? null,
         state: result.event.state ?? null,
         fee: result.event.fee ?? null,
         stage: result.event.funnelStage ?? null,
         contract_status:
           result.event.contractStatus === "Pendente"
-            ? "pending"
+            ? "pendente"
             : result.event.contractStatus === "Assinado"
-              ? "signed"
+              ? "assinado"
               : result.event.contractStatus === "Cancelado"
-                ? "canceled"
+                ? "cancelado"
                 : null,
         notes: result.event.notes ?? null,
         created_by: user.id,
       };
 
-      const { error } = await db.from("calendar_events").upsert(payload, { onConflict: "id" });
+      const { error } = await db.from("events").upsert(payload, { onConflict: "id" });
       if (error) {
         toast("Não foi possível salvar", { description: error.message });
         return;
       }
-      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
       setSelected(result.event);
       return;
     }
 
     if (result.type === "delete") {
-      const { error } = await db.from("calendar_events").delete().eq("id", result.id);
+      const { error } = await db.from("events").delete().eq("id", result.id);
       if (error) {
         toast("Não foi possível remover", { description: error.message });
         return;
       }
-      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
       setSelected((s) => (s?.id === result.id ? null : s));
     }
   }
