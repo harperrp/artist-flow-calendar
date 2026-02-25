@@ -46,7 +46,9 @@ function getMarkerColor(status?: string, type?: string): string {
   }
 }
 
-function createColoredIcon(color: string) {
+function createColoredIcon(color: string, type: MapMarker["type"]) {
+  const symbol = type === "lead" ? "L" : "S";
+
   return L.divIcon({
     className: "custom-marker",
     html: `<div style="
@@ -56,7 +58,14 @@ function createColoredIcon(color: string) {
       border-radius: 50%;
       border: 3px solid white;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: system-ui, -apple-system, sans-serif;
+    ">${symbol}</div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
@@ -96,7 +105,7 @@ export function MapPreview({ markers, onMarkerClick, center, zoom = 4 }: Props) 
 
     // Add new markers
     markers.forEach((marker) => {
-      const icon = createColoredIcon(getMarkerColor(marker.status, marker.type));
+      const icon = createColoredIcon(getMarkerColor(marker.status, marker.type), marker.type);
       const leafletMarker = L.marker([marker.lat, marker.lng], { icon }).addTo(mapInstanceRef.current!);
 
       const popupContent = `
