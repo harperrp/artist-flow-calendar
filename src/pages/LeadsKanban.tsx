@@ -124,6 +124,84 @@ export function LeadsKanbanPage() {
     return filteredLeads.reduce((sum: number, l: any) => sum + (l.fee || 0), 0);
   }, [filteredLeads]);
 
+  async function geocodeLeadLocation(leadData: any) {
+    const city = leadData.city?.trim();
+    const state = leadData.state?.trim();
+    const venue = leadData.venue_name?.trim();
+
+    if (!city && !state) {
+      return { latitude: null, longitude: null };
+    }
+
+    const query = [venue, city, state, "Brasil"].filter(Boolean).join(", ");
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            "Accept-Language": "pt-BR",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return { latitude: null, longitude: null };
+      }
+
+      const results = await response.json();
+      const firstMatch = results?.[0];
+
+      if (!firstMatch) {
+        return { latitude: null, longitude: null };
+      }
+
+      return {
+        latitude: Number(firstMatch.lat),
+        longitude: Number(firstMatch.lon),
+      };
+    } catch {
+      return { latitude: null, longitude: null };
+    }
+  }
+
+  async function syncCalendarEventWithLead(leadId: string, leadData: any, createdBy: string) {
+    if (!activeOrgId || !leadData.event_date) return;
+
+    const eventPayload = {
+      organization_id: activeOrgId,
+      lead_id: leadId,
+      title: leadData.contractor_name,
+      status: leadData.stage === "Fechado" ? "confirmed" : "negotiation",
+      start_time: new Date(leadData.event_date).toISOString(),
+      city: leadData.city,
+      state: leadData.state,
+      fee: leadData.fee,
+      latitude: leadData.latitude,
+      longitude: leadData.longitude,
+      venue_name: leadData.venue_name,
+      contractor_name: leadData.contractor_name,
+      stage: leadData.stage,
+    };
+
+    const { data: existingEvent } = await db
+      .from("calendar_events")
+      .select("id")
+      .eq("lead_id", leadId)
+      .maybeSingle();
+
+    if (existingEvent?.id) {
+      await db.from("calendar_events").update(eventPayload).eq("id", existingEvent.id);
+      return;
+    }
+
+    if (["Negociação", "Contrato", "Fechado"].includes(leadData.stage)) {
+      await db
+        .from("calendar_events")
+        .insert({ ...eventPayload, created_by: createdBy });
+    }
+  }
+
   async function handleDragEnd(result: DropResult) {
     if (!result.destination) return;
 
@@ -152,25 +230,41 @@ export function LeadsKanbanPage() {
       return;
     }
 
-    // If moved to "Negociação", create calendar event
+    // If moved to "Negociação", create/update linked calendar event
     if (newStage === "Negociação" && lead.event_date) {
       const user = (await supabase.auth.getUser()).data.user;
       if (user) {
-        await db.from("calendar_events").insert({
-          organization_id: activeOrgId,
-          lead_id: leadId,
+        const { data: existingEvent } = await db
+          .from("calendar_events")
+          .select("id")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+
+        const eventPayload = {
           title: lead.contractor_name,
           status: "negotiation",
           start_time: new Date(lead.event_date).toISOString(),
           city: lead.city,
           state: lead.state,
           fee: lead.fee,
-          created_by: user.id,
           latitude: lead.latitude,
           longitude: lead.longitude,
           venue_name: lead.venue_name,
           contractor_name: lead.contractor_name,
-        });
+          stage: newStage,
+        };
+
+        if (existingEvent?.id) {
+          await db.from("calendar_events").update(eventPayload).eq("id", existingEvent.id);
+        } else {
+          await db.from("calendar_events").insert({
+            ...eventPayload,
+            organization_id: activeOrgId,
+            lead_id: leadId,
+            created_by: user.id,
+          });
+        }
+
         toast.success("Evento criado no calendário");
       }
     }
@@ -206,29 +300,50 @@ export function LeadsKanbanPage() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user || !activeOrgId) return;
 
+    const geocodedLocation = await geocodeLeadLocation(data);
+    const leadPayload = {
+      ...data,
+      latitude: geocodedLocation.latitude ?? editingLead?.latitude ?? null,
+      longitude: geocodedLocation.longitude ?? editingLead?.longitude ?? null,
+    };
+
     if (editingLead) {
       // Update
       const { error } = await db
         .from("leads")
-        .update(data)
+        .update(leadPayload)
         .eq("id", editingLead.id);
       if (error) {
         toast.error("Erro ao atualizar lead", { description: error.message });
         return;
       }
+
+      await syncCalendarEventWithLead(editingLead.id, leadPayload, user.id);
+
       toast.success("Lead atualizado");
     } else {
       // Create
-      const { error } = await db.from("leads").insert({
-        ...data,
+      const { data: createdLead, error } = await db.from("leads").insert({
+        ...leadPayload,
         organization_id: activeOrgId,
         created_by: user.id,
-      });
+      }).select("id").single();
       if (error) {
         toast.error("Erro ao criar lead", { description: error.message });
         return;
       }
+
+      if (createdLead?.id) {
+        await syncCalendarEventWithLead(createdLead.id, leadPayload, user.id);
+      }
+
       toast.success("Lead criado");
+    }
+
+    if (!leadPayload.latitude || !leadPayload.longitude) {
+      toast.info("Localização não encontrada automaticamente", {
+        description: "Preencha cidade/UF com mais detalhes para aparecer no mapa.",
+      });
     }
 
     setDialogOpen(false);
