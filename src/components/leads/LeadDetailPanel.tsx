@@ -32,11 +32,14 @@ import {
   FileText,
   Activity,
   ListTodo,
+  Receipt,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadMessagesThread } from "./LeadMessagesThread";
+import { LeadFinancialSummary } from "@/components/finance/LeadFinancialSummary";
+import { useOrg } from "@/providers/OrgProvider";
 
 interface Activity {
   id: string;
@@ -138,6 +141,7 @@ const priorityColors = {
 };
 
 export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProps) {
+  const { activeOrgId } = useOrg();
   const [activities] = useState(mockActivities);
   const [tasks, setTasks] = useState(mockTasks);
   const [newNote, setNewNote] = useState("");
@@ -225,6 +229,13 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
           )}
         </div>
       </div>
+
+      {/* Financial Summary */}
+      {activeOrgId && lead && (
+        <div className="p-4">
+          <LeadFinancialSummary lead={lead} orgId={activeOrgId} />
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
