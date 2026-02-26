@@ -1,10 +1,12 @@
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useContracts, useCalendarEvents } from "@/hooks/useCrmQueries";
+import { useLeadFinancialSummaries } from "@/hooks/usePaymentQueries";
 import { monthStats } from "@/lib/calendar-utils";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, parseISO, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MapPin } from "lucide-react";
+import { MapPin, DollarSign, AlertTriangle, Clock, CheckCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { MapPreview } from "@/components/map/MapPreview";
 import { DashboardStats } from "@/components/dashboard/StatsCards";
 import { UpcomingShows } from "@/components/dashboard/UpcomingShows";
@@ -22,7 +24,7 @@ export function DashboardPage() {
   const { data: leads = [] } = useLeads(activeOrgId);
   const { data: contracts = [] } = useContracts(activeOrgId);
   const { data: dbEvents = [] } = useCalendarEvents(activeOrgId);
-
+  const { data: financialSummaries = [] } = useLeadFinancialSummaries(activeOrgId);
   const now = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
@@ -103,6 +105,68 @@ export function DashboardPage() {
         pendingContracts={contracts.filter((c: any) => c.status === "pending").length}
         freeDays={stats.freeDays}
       />
+
+      {/* Payment KPIs */}
+      {financialSummaries.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-4 border bg-card/80 border-l-4 border-l-green-500">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                    financialSummaries.reduce((sum: number, s: any) => sum + Number(s.received_amount || 0), 0)
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">Recebido total</div>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border bg-card/80 border-l-4 border-l-yellow-500">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                    financialSummaries.reduce((sum: number, s: any) => sum + Math.max(0, Number(s.remaining_amount || 0)), 0)
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">A receber</div>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border bg-card/80 border-l-4 border-l-red-500">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {financialSummaries.filter((s: any) => s.overdue_count > 0).length}
+                </div>
+                <div className="text-xs text-muted-foreground">Leads com atraso</div>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border bg-card/80 border-l-4 border-l-primary">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <DollarSign className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {financialSummaries.filter((s: any) => s.payment_status === "pago").length}/{financialSummaries.length}
+                </div>
+                <div className="text-xs text-muted-foreground">Planos quitados</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Charts row */}
       <div className="grid gap-4 lg:grid-cols-2">

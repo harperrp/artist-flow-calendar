@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, MapPin, Calendar, DollarSign, Building2, Edit2, TrendingUp, Handshake, Tag, MessageCircle } from "lucide-react";
+import { LeadFinancialBadge } from "@/components/finance/LeadFinancialBadge";
+import { useLeadFinancialSummaries } from "@/hooks/usePaymentQueries";
 import { format, parseISO } from "date-fns";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
@@ -67,6 +69,7 @@ const LEAD_FILTERS: FilterConfig[] = [
 export function LeadsKanbanPage() {
   const { activeOrgId } = useOrg();
   const { data: leads = [], refetch } = useLeads(activeOrgId);
+  const { data: financialSummaries = [] } = useLeadFinancialSummaries(activeOrgId);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any>(null);
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -506,6 +509,12 @@ export function LeadsKanbanPage() {
                                     {formatMoneyBRL(lead.fee)}
                                   </div>
                                 )}
+
+                                {/* Financial Status Badge */}
+                                {(() => {
+                                  const summary = financialSummaries.find((s: any) => s.lead_id === lead.id);
+                                  return summary ? <LeadFinancialBadge summary={summary} compact /> : null;
+                                })()}
 
                                 {/* WhatsApp Link */}
                                 {lead.contact_phone && (

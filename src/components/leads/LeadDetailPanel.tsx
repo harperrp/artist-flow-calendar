@@ -37,6 +37,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadMessagesThread } from "./LeadMessagesThread";
+import { PaymentPlanSection } from "@/components/finance/PaymentPlanSection";
 
 interface Activity {
   id: string;
@@ -224,6 +225,11 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
             </div>
           )}
         </div>
+      </div>
+
+      {/* Payment Plan Section */}
+      <div className="px-4 py-3 border-b">
+        <PaymentPlanSection lead={lead} />
       </div>
 
       {/* Tabs */}
