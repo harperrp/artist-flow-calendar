@@ -110,7 +110,7 @@ export function TasksPage() {
     setDescription(task.description || "");
     setPriority(task.priority || "medium");
     setDueDate(task.due_date ? task.due_date.split("T")[0] : "");
-    setAssignedTo(task.assigned_to || "");
+    setAssignedTo(task.assigned_to || "__none__");
     setDialogOpen(true);
   }
 
@@ -124,7 +124,7 @@ export function TasksPage() {
       description: description.trim() || null,
       priority,
       due_date: dueDate || null,
-      assigned_to: assignedTo || null,
+      assigned_to: assignedTo && assignedTo !== "__none__" ? assignedTo : null,
     };
 
     let taskId: string | null = null;
@@ -146,7 +146,7 @@ export function TasksPage() {
     }
 
     // Send notification if assigned to someone else
-    if (assignedTo && assignedTo !== currentUser.id && taskId) {
+    if (assignedTo && assignedTo !== "__none__" && assignedTo !== currentUser.id && taskId) {
       const assignee = memberMap.get(assignedTo);
       const senderName = members.find((m: any) => m.userId === currentUser.id)?.displayName || "Alguém";
       sendNotification.mutate({
@@ -405,7 +405,7 @@ export function TasksPage() {
                   <SelectValue placeholder="Selecione um membro..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Ninguém</SelectItem>
+                  <SelectItem value="__none__">Ninguém</SelectItem>
                   {members.map((m: any) => (
                     <SelectItem key={m.userId} value={m.userId}>
                       <span className="flex items-center gap-2">
