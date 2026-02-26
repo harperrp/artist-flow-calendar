@@ -125,44 +125,17 @@ export function LeadsKanbanPage() {
   }, [filteredLeads]);
 
   async function geocodeLeadLocation(leadData: any) {
-    const city = leadData.city?.trim();
-    const state = leadData.state?.trim();
-    const venue = leadData.venue_name?.trim();
-
-    if (!city && !state) {
-      return { latitude: null, longitude: null };
-    }
-
-    const query = [venue, city, state, "Brasil"].filter(Boolean).join(", ");
-
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            "Accept-Language": "pt-BR",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        return { latitude: null, longitude: null };
-      }
-
-      const results = await response.json();
-      const firstMatch = results?.[0];
-
-      if (!firstMatch) {
-        return { latitude: null, longitude: null };
-      }
-
-      return {
-        latitude: Number(firstMatch.lat),
-        longitude: Number(firstMatch.lon),
-      };
-    } catch {
-      return { latitude: null, longitude: null };
-    }
+    const { geocodeAddress } = await import("@/lib/geocoding");
+    const result = await geocodeAddress({
+      street: leadData.street,
+      number: leadData.street_number,
+      neighborhood: leadData.neighborhood,
+      city: leadData.city,
+      state: leadData.state,
+      zipCode: leadData.zip_code,
+    });
+    if (!result) return { latitude: null, longitude: null };
+    return { latitude: result.lat, longitude: result.lng };
   }
 
   async function syncCalendarEventWithLead(leadId: string, leadData: any, createdBy: string) {

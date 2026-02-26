@@ -489,14 +489,18 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          neighborhood: string | null
           notes: string | null
           organization_id: string
           origin: string | null
           stage: Database["public"]["Enums"]["funnel_stage"]
           state: string | null
+          street: string | null
+          street_number: string | null
           updated_at: string
           venue_id: string | null
           venue_name: string | null
+          zip_code: string | null
         }
         Insert: {
           city?: string | null
@@ -513,14 +517,18 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           notes?: string | null
           organization_id: string
           origin?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
+          zip_code?: string | null
         }
         Update: {
           city?: string | null
@@ -537,14 +545,18 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           notes?: string | null
           organization_id?: string
           origin?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {

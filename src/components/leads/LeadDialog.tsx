@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { Separator } from "@/components/ui/separator";
+import { MapPin, Navigation } from "lucide-react";
 import type { FunnelStage } from "@/lib/calendar-types";
 
 const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
@@ -35,6 +38,10 @@ const schema = z.object({
   contractor_type: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  street: z.string().optional(),
+  street_number: z.string().optional(),
+  neighborhood: z.string().optional(),
+  zip_code: z.string().optional(),
   venue_name: z.string().optional(),
   event_name: z.string().optional(),
   event_date: z.string().optional(),
@@ -57,6 +64,7 @@ type Props = {
 
 export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props) {
   const isEdit = !!initialData;
+  const [cityInput, setCityInput] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -65,6 +73,10 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
       contractor_type: "",
       city: "",
       state: "",
+      street: "",
+      street_number: "",
+      neighborhood: "",
+      zip_code: "",
       venue_name: "",
       event_name: "",
       event_date: "",
@@ -85,6 +97,10 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           contractor_type: initialData.contractor_type || "",
           city: initialData.city || "",
           state: initialData.state || "",
+          street: initialData.street || "",
+          street_number: initialData.street_number || "",
+          neighborhood: initialData.neighborhood || "",
+          zip_code: initialData.zip_code || "",
           venue_name: initialData.venue_name || "",
           event_name: initialData.event_name || "",
           event_date: initialData.event_date || "",
@@ -95,25 +111,40 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           notes: initialData.notes || "",
           stage: initialData.stage || "Prospecção",
         });
+        setCityInput(initialData.city || "");
       } else {
-        form.reset({
-          contractor_name: "",
-          contractor_type: "",
-          city: "",
-          state: "",
-          venue_name: "",
-          event_name: "",
-          event_date: "",
-          fee: undefined,
-          contact_phone: "",
-          contact_email: "",
-          origin: "",
-          notes: "",
-          stage: "Prospecção",
-        });
+        form.reset();
+        setCityInput("");
       }
     }
   }, [open, initialData, form]);
+
+  function handleCitySelect(city: string, state: string) {
+    setCityInput(city);
+    form.setValue("city", city);
+    form.setValue("state", state);
+  }
+
+  async function handleCepLookup() {
+    const cep = form.watch("zip_code")?.replace(/\D/g, "");
+    if (!cep || cep.length !== 8) return;
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data.erro) return;
+
+      if (data.logradouro) form.setValue("street", data.logradouro);
+      if (data.bairro) form.setValue("neighborhood", data.bairro);
+      if (data.localidade) {
+        form.setValue("city", data.localidade);
+        setCityInput(data.localidade);
+      }
+      if (data.uf) form.setValue("state", data.uf);
+    } catch {
+      // ignore
+    }
+  }
 
   function onSubmit(values: FormValues) {
     onResult(values);
@@ -150,30 +181,6 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
                 <SelectContent>
                   {CONTRACTOR_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* City */}
-            <div className="space-y-2">
-              <Label htmlFor="city">Cidade</Label>
-              <Input id="city" {...form.register("city")} />
-            </div>
-
-            {/* State */}
-            <div className="space-y-2">
-              <Label>UF</Label>
-              <Select
-                value={form.watch("state") || ""}
-                onValueChange={(v) => form.setValue("state", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -221,18 +228,6 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
               </Select>
             </div>
 
-            {/* Contact Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="contact_phone">Telefone</Label>
-              <Input id="contact_phone" {...form.register("contact_phone")} placeholder="(00) 00000-0000" />
-            </div>
-
-            {/* Contact Email */}
-            <div className="space-y-2">
-              <Label htmlFor="contact_email">E-mail</Label>
-              <Input id="contact_email" type="email" {...form.register("contact_email")} />
-            </div>
-
             {/* Origin */}
             <div className="space-y-2">
               <Label>Origem do Lead</Label>
@@ -251,11 +246,98 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
               </Select>
             </div>
 
-            {/* Notes */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea id="notes" {...form.register("notes")} rows={3} />
+            {/* Contact Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="contact_phone">Telefone</Label>
+              <Input id="contact_phone" {...form.register("contact_phone")} placeholder="(00) 00000-0000" />
             </div>
+
+            {/* Contact Email */}
+            <div className="space-y-2">
+              <Label htmlFor="contact_email">E-mail</Label>
+              <Input id="contact_email" type="email" {...form.register("contact_email")} />
+            </div>
+          </div>
+
+          {/* Address Section */}
+          <Separator />
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <MapPin className="h-4 w-4 text-primary" />
+              Endereço
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* CEP */}
+              <div className="space-y-2">
+                <Label htmlFor="zip_code">CEP</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="zip_code"
+                    {...form.register("zip_code")}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={handleCepLookup} title="Buscar por CEP">
+                    <Navigation className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* City autocomplete */}
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <CityAutocomplete
+                  value={cityInput}
+                  onChange={(v) => {
+                    setCityInput(v);
+                    form.setValue("city", v);
+                  }}
+                  onCitySelect={handleCitySelect}
+                />
+              </div>
+
+              {/* State */}
+              <div className="space-y-2">
+                <Label>UF</Label>
+                <Select
+                  value={form.watch("state") || ""}
+                  onValueChange={(v) => form.setValue("state", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Street */}
+              <div className="space-y-2">
+                <Label htmlFor="street">Rua</Label>
+                <Input id="street" {...form.register("street")} placeholder="Nome da rua" />
+              </div>
+
+              {/* Number */}
+              <div className="space-y-2">
+                <Label htmlFor="street_number">Número</Label>
+                <Input id="street_number" {...form.register("street_number")} placeholder="Nº" />
+              </div>
+
+              {/* Neighborhood */}
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood">Bairro</Label>
+                <Input id="neighborhood" {...form.register("neighborhood")} placeholder="Bairro" />
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea id="notes" {...form.register("notes")} rows={3} />
           </div>
 
           <DialogFooter>
