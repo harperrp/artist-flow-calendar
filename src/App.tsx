@@ -16,6 +16,7 @@ import { ContactsPage } from "@/pages/Contacts";
 import { ArtistCalendarPage } from "@/components/artist-calendar/ArtistCalendarPage";
 import { TeamPage } from "@/pages/Team";
 import { TasksPage } from "@/pages/Tasks";
+import { UsersPage } from "@/pages/Users";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -48,6 +49,7 @@ const App = () => (
                   <Route path="contacts" element={<ContactsPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="team" element={<TeamPage />} />
+                  <Route path="users" element={<UsersPage />} />
                   <Route path="map" element={<MapViewPage />} />
                   <Route path="financial" element={<FinancialPage />} />
                 </Route>

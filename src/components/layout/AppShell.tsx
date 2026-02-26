@@ -16,6 +16,7 @@ import {
   DollarSign,
   Users,
   UsersRound,
+  UserCog,
   ListChecks,
   Menu,
   X,
@@ -72,6 +73,7 @@ export function AppShell() {
     { to: "/app/contacts", icon: Users, label: "Contatos", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/tasks", icon: ListChecks, label: "Tarefas", roles: ["admin", "comercial", "financeiro", "artista"] },
     { to: "/app/team", icon: UsersRound, label: "Equipe", roles: ["admin"] },
+    { to: "/app/users", icon: UserCog, label: "Usuários", roles: ["admin"] },
     { to: "/app/map", icon: Map, label: "Mapa", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/financial", icon: DollarSign, label: "Financeiro", roles: ["admin", "financeiro"] },
   ];
