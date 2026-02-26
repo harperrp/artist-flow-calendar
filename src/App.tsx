@@ -15,6 +15,7 @@ import { FinancialPage } from "@/pages/Financial";
 import { ContactsPage } from "@/pages/Contacts";
 import { ArtistCalendarPage } from "@/components/artist-calendar/ArtistCalendarPage";
 import { TeamPage } from "@/pages/Team";
+import { TasksPage } from "@/pages/Tasks";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -43,6 +44,7 @@ const App = () => (
                   <Route path="leads" element={<LeadsKanbanPage />} />
                   <Route path="contracts" element={<ContractsCrudPage />} />
                   <Route path="contacts" element={<ContactsPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="map" element={<MapViewPage />} />
                   <Route path="financial" element={<FinancialPage />} />

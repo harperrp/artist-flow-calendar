@@ -14,6 +14,7 @@ import {
   DollarSign,
   Users,
   UsersRound,
+  ListChecks,
   Menu,
   X,
 } from "lucide-react";
@@ -64,6 +65,7 @@ export function AppShell() {
     { to: "/app/leads", icon: Handshake, label: "Leads" },
     { to: "/app/contracts", icon: FileText, label: "Contratos" },
     { to: "/app/contacts", icon: Users, label: "Contatos" },
+    { to: "/app/tasks", icon: ListChecks, label: "Tarefas" },
     { to: "/app/team", icon: UsersRound, label: "Equipe" },
     { to: "/app/map", icon: Map, label: "Mapa" },
     { to: "/app/financial", icon: DollarSign, label: "Financeiro" },
