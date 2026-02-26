@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrg } from "@/providers/OrgProvider";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays,
@@ -21,6 +22,7 @@ import {
   Menu,
   X,
   Music,
+  Crown,
 } from "lucide-react";
 import { useState } from "react";
 import { QuickAddMenu } from "./QuickAddMenu";
@@ -62,6 +64,7 @@ export function AppShell() {
   const { user } = useAuth();
   const { profile } = useOrg();
   const { role, roleLabel, canViewFinancialTotals, canManageLeads, isArtista } = useUserRole();
+  const { isSuperAdmin } = useSuperAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const allNavItems = [
@@ -79,6 +82,11 @@ export function AppShell() {
   ];
 
   const navItems = allNavItems.filter((item) => item.roles.includes(role));
+
+  // Add super admin link if user is super admin
+  if (isSuperAdmin) {
+    navItems.push({ to: "/app/admin", icon: Crown, label: "Super Admin", roles: ["admin"] });
+  }
 
   return (
     <div className="min-h-screen bg-background">

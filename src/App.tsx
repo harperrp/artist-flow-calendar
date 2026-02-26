@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ArtistDashboardPage } from "@/pages/ArtistDashboard";
+import { SuperAdminPage } from "@/pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
                   <Route path="users" element={<UsersPage />} />
                   <Route path="map" element={<MapViewPage />} />
                   <Route path="financial" element={<FinancialPage />} />
+                  <Route path="admin" element={<SuperAdminPage />} />
                 </Route>
               </Route>
 
