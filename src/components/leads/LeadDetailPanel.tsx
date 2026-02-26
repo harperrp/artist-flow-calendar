@@ -192,10 +192,17 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
 
         {/* Quick Info */}
         <div className="grid grid-cols-2 gap-3 mt-4">
-          {(lead.city || lead.state) && (
+          {(lead.city || lead.state || lead.street) && (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              {[lead.city, lead.state].filter(Boolean).join(" / ")}
+              <span className="truncate">
+                {[
+                  lead.street && lead.street_number ? `${lead.street}, ${lead.street_number}` : lead.street,
+                  lead.neighborhood,
+                  lead.city,
+                  lead.state,
+                ].filter(Boolean).join(" - ")}
+              </span>
             </div>
           )}
           {lead.event_date && (
