@@ -682,6 +682,197 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_installments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          installment_number: number
+          notes: string | null
+          organization_id: string
+          paid_amount: number | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_plan_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          installment_number: number
+          notes?: string | null
+          organization_id: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_plan_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          notes?: string | null
+          organization_id?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_plan_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_installments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_installments_payment_plan_id_fkey"
+            columns: ["payment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "lead_financial_summary"
+            referencedColumns: ["payment_plan_id"]
+          },
+          {
+            foreignKeyName: "payment_installments_payment_plan_id_fkey"
+            columns: ["payment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "payment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string
+          event_id: string | null
+          id: string
+          lead_id: string
+          model: string
+          notes: string | null
+          organization_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string
+          event_id?: string | null
+          id?: string
+          lead_id: string
+          model: string
+          notes?: string | null
+          organization_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string
+          event_id?: string | null
+          id?: string
+          lead_id?: string
+          model?: string
+          notes?: string | null
+          organization_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_plans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_receipts: {
+        Row: {
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          installment_id: string
+          mime_type: string | null
+          notes: string | null
+          organization_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          installment_id: string
+          mime_type?: string | null
+          notes?: string | null
+          organization_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          installment_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          organization_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "payment_installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_receipts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active_organization_id: string | null
@@ -1035,7 +1226,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      lead_financial_summary: {
+        Row: {
+          lead_id: string | null
+          model: string | null
+          next_due_date: string | null
+          organization_id: string | null
+          overdue_count: number | null
+          paid_installments: number | null
+          payment_plan_id: string | null
+          payment_status: string | null
+          received_amount: number | null
+          remaining_amount: number | null
+          total_amount: number | null
+          total_installments: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_plans_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_org_role: {
@@ -1058,6 +1280,10 @@ export type Database = {
       is_member_of_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
+      }
+      mark_overdue_installments: {
+        Args: { _org_id: string }
+        Returns: undefined
       }
     }
     Enums: {
