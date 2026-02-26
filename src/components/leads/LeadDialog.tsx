@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/select";
 import { CityAutocomplete } from "@/components/ui/city-autocomplete";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, Map } from "lucide-react";
+import { MapPickerDialog } from "./MapPickerDialog";
 import type { FunnelStage } from "@/lib/calendar-types";
 
 const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
@@ -65,6 +66,7 @@ type Props = {
 export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props) {
   const isEdit = !!initialData;
   const [cityInput, setCityInput] = useState("");
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -144,6 +146,39 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
     } catch {
       // ignore
     }
+  }
+
+  async function handleCitySelected(city: string, state: string) {
+    handleCitySelect(city, state);
+    // Try to find CEP from IBGE city data via ViaCEP
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${state}/${city}/a/json/`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].cep) {
+        form.setValue("zip_code", data[0].cep);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleMapConfirm(data: {
+    lat: number;
+    lng: number;
+    street?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  }) {
+    if (data.street) form.setValue("street", data.street);
+    if (data.neighborhood) form.setValue("neighborhood", data.neighborhood);
+    if (data.city) {
+      form.setValue("city", data.city);
+      setCityInput(data.city);
+    }
+    if (data.state) form.setValue("state", data.state);
+    if (data.zipCode) form.setValue("zip_code", data.zipCode);
   }
 
   function onSubmit(values: FormValues) {
@@ -262,27 +297,23 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           {/* Address Section */}
           <Separator />
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-primary" />
-              Endereço
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <MapPin className="h-4 w-4 text-primary" />
+                Endereço
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setMapPickerOpen(true)}
+                className="gap-2"
+              >
+                <Map className="h-4 w-4" />
+                Selecionar no Mapa
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* CEP */}
-              <div className="space-y-2">
-                <Label htmlFor="zip_code">CEP</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="zip_code"
-                    {...form.register("zip_code")}
-                    placeholder="00000-000"
-                    maxLength={9}
-                  />
-                  <Button type="button" variant="outline" size="icon" onClick={handleCepLookup} title="Buscar por CEP">
-                    <Navigation className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
               {/* City autocomplete */}
               <div className="space-y-2">
                 <Label>Cidade</Label>
@@ -292,7 +323,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
                     setCityInput(v);
                     form.setValue("city", v);
                   }}
-                  onCitySelect={handleCitySelect}
+                  onCitySelect={handleCitySelected}
                 />
               </div>
 
@@ -312,6 +343,22 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* CEP */}
+              <div className="space-y-2">
+                <Label htmlFor="zip_code">CEP</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="zip_code"
+                    {...form.register("zip_code")}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={handleCepLookup} title="Buscar por CEP">
+                    <Navigation className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Street */}
@@ -347,6 +394,12 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
             <Button type="submit">{isEdit ? "Salvar" : "Criar Lead"}</Button>
           </DialogFooter>
         </form>
+
+        <MapPickerDialog
+          open={mapPickerOpen}
+          onOpenChange={setMapPickerOpen}
+          onConfirm={handleMapConfirm}
+        />
       </DialogContent>
     </Dialog>
   );
