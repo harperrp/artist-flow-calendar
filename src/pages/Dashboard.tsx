@@ -10,6 +10,7 @@ import { DashboardStats } from "@/components/dashboard/StatsCards";
 import { UpcomingShows } from "@/components/dashboard/UpcomingShows";
 import { PendingTasks } from "@/components/dashboard/PendingTasks";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
+import { FinanceQuickCard } from "@/components/dashboard/FinanceQuickCard";
 import {
   ShowsPerMonthChart,
   RevenueChart,
@@ -134,10 +135,11 @@ export function DashboardPage() {
         <UpcomingShows events={monthEvents} />
       </div>
 
-      {/* Tasks + Activities */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Tasks + Activities + Finance */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <PendingTasks />
         <RecentActivities />
+        <FinanceQuickCard />
       </div>
     </div>
   );

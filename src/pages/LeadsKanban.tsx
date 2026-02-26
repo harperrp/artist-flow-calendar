@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads } from "@/hooks/useCrmQueries";
+import { useAllLeadsFinancials } from "@/hooks/useLeadFinancials";
+import { KanbanFinancialBadge } from "@/components/finance/KanbanFinancialBadge";
 import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,6 +69,7 @@ const LEAD_FILTERS: FilterConfig[] = [
 export function LeadsKanbanPage() {
   const { activeOrgId } = useOrg();
   const { data: leads = [], refetch } = useLeads(activeOrgId);
+  const { data: txByLead = {} } = useAllLeadsFinancials(activeOrgId);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any>(null);
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -499,13 +502,17 @@ export function LeadsKanbanPage() {
                                   </div>
                                 )}
 
-                                {/* Fee */}
+                                {/* Fee + Financial Badge */}
                                 {lead.fee && (
                                   <div className="flex items-center gap-1 text-sm font-bold text-status-confirmed">
                                     <DollarSign className="h-3 w-3" />
                                     {formatMoneyBRL(lead.fee)}
                                   </div>
                                 )}
+                                <KanbanFinancialBadge
+                                  leadFee={lead.fee}
+                                  transactions={txByLead[lead.id] ?? []}
+                                />
 
                                 {/* WhatsApp Link */}
                                 {lead.contact_phone && (
