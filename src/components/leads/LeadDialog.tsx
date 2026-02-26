@@ -186,6 +186,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -394,13 +395,14 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
             <Button type="submit">{isEdit ? "Salvar" : "Criar Lead"}</Button>
           </DialogFooter>
         </form>
-
-        <MapPickerDialog
-          open={mapPickerOpen}
-          onOpenChange={setMapPickerOpen}
-          onConfirm={handleMapConfirm}
-        />
       </DialogContent>
     </Dialog>
+
+    <MapPickerDialog
+      open={mapPickerOpen}
+      onOpenChange={setMapPickerOpen}
+      onConfirm={handleMapConfirm}
+    />
+    </>
   );
 }
