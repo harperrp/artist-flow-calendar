@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import previewDashboard from "@/assets/preview-dashboard.jpg";
+import previewKanban from "@/assets/preview-kanban.jpg";
+import previewCalendar from "@/assets/preview-calendar.jpg";
 import {
   CalendarDays,
   Handshake,
@@ -171,6 +175,45 @@ const testimonials = [
     rating: 5,
   },
 ];
+
+const previewScreens = [
+  { id: "dashboard", label: "Dashboard", image: previewDashboard, description: "Visão completa dos seus KPIs, agenda e receitas em um único painel." },
+  { id: "kanban", label: "Funil de Vendas", image: previewKanban, description: "Gerencie seus leads com drag-and-drop, da prospecção ao fechamento." },
+  { id: "calendar", label: "Agenda", image: previewCalendar, description: "Calendário visual com código de cores por status e prevenção de conflitos." },
+];
+
+function PreviewTabs() {
+  const [active, setActive] = useState(0);
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-center gap-2 flex-wrap">
+        {previewScreens.map((screen, i) => (
+          <Button
+            key={screen.id}
+            variant={active === i ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActive(i)}
+            className="gap-2"
+          >
+            {screen.label}
+          </Button>
+        ))}
+      </div>
+
+      <div className="relative rounded-2xl border bg-card shadow-2xl overflow-hidden">
+        <img
+          src={previewScreens[active].image}
+          alt={`Preview do ${previewScreens[active].label}`}
+          className="w-full h-auto"
+        />
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/90 to-transparent p-6 md:p-8">
+          <h3 className="text-xl font-bold mb-1">{previewScreens[active].label}</h3>
+          <p className="text-muted-foreground max-w-lg">{previewScreens[active].description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function LandingPage() {
   return (
@@ -344,6 +387,23 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* System Preview Section */}
+      <section className="border-t py-20 md:py-28 bg-background">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4">Veja na Prática</Badge>
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl mb-4">
+              Conheça o sistema por dentro
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Interface moderna e intuitiva, feita para você focar no que importa: fechar mais shows.
+            </p>
+          </div>
+
+          <PreviewTabs />
         </div>
       </section>
 
