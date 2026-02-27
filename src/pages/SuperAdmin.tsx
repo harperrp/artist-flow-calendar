@@ -6,6 +6,7 @@ import { Navigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { OrgActionsMenu } from "@/components/super-admin/OrgActionsMenu";
 import {
   Table,
   TableBody,
@@ -100,8 +101,16 @@ export function SuperAdminPage() {
 
   const statusColors: Record<string, string> = {
     active: "bg-status-confirmed/20 text-status-confirmed border-status-confirmed/30",
+    paused: "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
     inactive: "bg-muted text-muted-foreground border-border",
     canceled: "bg-destructive/20 text-destructive border-destructive/30",
+  };
+
+  const statusLabels: Record<string, string> = {
+    active: "ATIVO",
+    paused: "PAUSADO",
+    inactive: "INATIVO",
+    canceled: "CANCELADO",
   };
 
   return (
@@ -179,6 +188,7 @@ export function SuperAdminPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Usuários</TableHead>
                 <TableHead>Cadastrado em</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,7 +219,7 @@ export function SuperAdminPage() {
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColors[org.status] || statusColors.inactive}>
-                        {org.status === "active" ? "ATIVO" : org.status === "canceled" ? "CANCELADO" : "INATIVO"}
+                        {statusLabels[org.status] || "INATIVO"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -220,6 +230,9 @@ export function SuperAdminPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(org.createdAt), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <OrgActionsMenu org={org} />
                     </TableCell>
                   </TableRow>
                 ))
