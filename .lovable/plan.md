@@ -1,79 +1,62 @@
 
 
-# Plano de Correção: Leads, Contatos e Eventos
+# Migrar banco de dados completo para o novo projeto
 
-## Problemas Identificados
+## Contexto
+O projeto foi remixado e agora aponta para um novo backend vazio. Todas as 14 migrations existentes precisam ser consolidadas em uma unica migration que recria todo o schema no novo projeto.
 
-### 1. Tabela de Eventos: nome errado no código
-O banco de dados tem a tabela `calendar_events`, mas **todo o código** usa `db.from("events")`. Isso faz com que nenhum evento seja salvo ou carregado -- o calendário fica vazio e criação de eventos falha silenciosamente.
+## O que sera feito
 
-**Arquivos afetados:**
-- `src/hooks/useCrmQueries.ts` (consultas e upsert)
-- `src/components/artist-calendar/ArtistCalendarPage.tsx` (update, upsert, delete)
-- `src/pages/LeadsKanban.tsx` (insert ao mover para Negociação/Fechado)
-- `src/pages/ContractsCrud.tsx` (update ao assinar contrato)
+### 1. Criar migration consolidada com todo o schema
+Uma unica migration SQL que inclui, na ordem correta:
 
-### 2. Contatos: página usa dados fictícios, "Salvar" não grava nada
-A página `src/pages/Contacts.tsx` tem uma lista de 8 contatos hardcoded (`mockContacts`). O formulário de "Novo Contato" apenas fecha o dialog sem gravar no banco. A tabela `contacts` existe no banco e tem RLS configurado, mas nao e usada.
+**Enums (7 tipos)**
+- `app_role` (admin, comercial, financeiro, artista)
+- `contract_status`, `event_status`, `funnel_stage`
+- `event_status_pt`, `contract_status_pt`, `payment_type_pt`, `payment_status_pt`
+- `taggable_type`, `activity_action`
 
-### 3. Leads: fallback para mock data mascara erros
-O Kanban usa `const displayLeads = leads.length > 0 ? leads : mockLeads` -- se a query falhar ou retornar vazio, o usuario ve dados falsos achando que sao reais.
+**Funcoes utilitarias**
+- `update_updated_at_column()` - trigger para updated_at
+- `is_member_of_org()` - verifica membership
+- `has_org_role()` - verifica role na org
+- `is_super_admin()` - verifica super admin
+- `is_confirmed_date_available()` - verifica conflito de agenda
+- `validate_calendar_event_conflicts()` - trigger de validacao
+- `mark_overdue_installments()` - marca parcelas atrasadas
+- `handle_new_user()` - bootstrap no signup (profile + org + membership + subscription)
 
----
+**Tabelas (22 tabelas + 1 view)**
+- organizations, profiles, memberships
+- leads, contracts, calendar_events
+- contacts, venues, regions, region_cities
+- tags, entity_tags, activity_logs, notes
+- tasks, team_members, contract_templates, riders
+- lead_messages, finance_transactions
+- events, payments
+- payment_plans, payment_installments, payment_receipts
+- super_admins, subscriptions
+- notifications
+- View: lead_financial_summary
 
-## Implementação
+**RLS completo** - todas as policies existentes para cada tabela
 
-### Etapa 1 -- Corrigir referências `"events"` para `"calendar_events"`
+**Triggers** - updated_at automatico, validacao de conflitos, bootstrap de usuario
 
-Atualizar **todas** as ocorrências de `db.from("events")` para `db.from("calendar_events")` e ajustar os nomes das colunas (`start_at` -> `start_time`, `end_at` -> `end_time`) conforme o schema real:
+**Storage** - bucket `receipts` com policies
 
-- **`src/hooks/useCrmQueries.ts`**: Corrigir `useCalendarEvents` (select), `useUpsertCalendarEvent` (insert/update). Remover o `mapEventToLegacy` que fazia tradução desnecessária de `start_at`/`end_at` (a tabela real já usa `start_time`/`end_time`).
-- **`src/components/artist-calendar/ArtistCalendarPage.tsx`**: Corrigir `handleEventDrop` (update `start_time`), `handleDialogResult` (upsert com campos corretos: `start_time`, `end_time`), e delete.
-- **`src/pages/LeadsKanban.tsx`**: Corrigir insert ao mover lead para "Negociação" (usar `start_time` ao invés de `start_at`) e update ao mover para "Fechado".
-- **`src/pages/ContractsCrud.tsx`**: Corrigir update de status.
+**Indices** - todos os indices de performance
 
-### Etapa 2 -- Contatos: CRUD real com banco de dados
+**Extensoes** - pg_cron e pg_net
 
-Reescrever `src/pages/Contacts.tsx`:
-- Criar hook `useContacts` em `useCrmQueries.ts` que faz `db.from("contacts").select("*").eq("organization_id", orgId)`.
-- Implementar formulário funcional com `react-hook-form` + zod que faz `db.from("contacts").insert(...)` com `organization_id` e `created_by`.
-- Remover `mockContacts` hardcoded.
-- Adicionar edição e exclusão de contatos.
+### 2. Corrigir erros de build nas Edge Functions
+Os dois erros TypeScript nas edge functions:
+- `invite-user/index.ts`: tipar `err` como `Error` no catch
+- `task-deadline-notifications/index.ts`: tipar `error` como `Error` no catch
 
-### Etapa 3 -- Remover fallback de mock data nos Leads
+## Detalhes tecnicos
 
-- Remover a linha `const displayLeads = leads.length > 0 ? leads : mockLeads` e usar `leads` diretamente.
-- Manter o `EmptyState` que ja existe para quando nao ha leads.
-- Atualizar todas as referências de `displayLeads` para `leads`.
+A migration sera uma consolidacao limpa de todas as 14 migrations existentes, sem os backfills (INSERT INTO... SELECT) que eram especificos do projeto anterior. A migration usara `CREATE TABLE IF NOT EXISTS` e `DO $$ BEGIN ... EXCEPTION ... END $$` para ser idempotente onde possivel.
 
-### Etapa 4 -- Remover mock data do Dashboard
-
-- Atualizar `src/pages/Dashboard.tsx` para usar dados reais ao invés de fallback para `mockLeads`/`mockEvents`.
-
----
-
-## Detalhes Técnicos
-
-### Mapeamento de colunas `calendar_events` (schema real):
-```text
-id, title, status (event_status enum), start_time, end_time, fee,
-city, state, notes, organization_id, created_by, lead_id, contract_id,
-venue_name, contractor_name, stage, contract_status, latitude, longitude
-```
-
-### Colunas `contacts` (schema real):
-```text
-id, name, phone, email, company, role, notes,
-organization_id, created_by, created_at, updated_at
-```
-
-### Arquivos que serão criados/modificados:
-| Arquivo | Ação |
-|---|---|
-| `src/hooks/useCrmQueries.ts` | Corrigir `"events"` -> `"calendar_events"`, campos, adicionar `useContacts` |
-| `src/components/artist-calendar/ArtistCalendarPage.tsx` | Corrigir `"events"` -> `"calendar_events"` e campos |
-| `src/pages/LeadsKanban.tsx` | Corrigir `"events"` -> `"calendar_events"`, remover mock fallback |
-| `src/pages/ContractsCrud.tsx` | Corrigir `"events"` -> `"calendar_events"` |
-| `src/pages/Contacts.tsx` | Reescrever com CRUD real |
-| `src/pages/Dashboard.tsx` | Remover fallback de mock data |
+O trigger `on_auth_user_created` no `auth.users` sera recriado para chamar `handle_new_user()` no signup.
 
