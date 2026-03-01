@@ -1,7 +1,1 @@
-project_id = "gnwuffwookqluxpzefnl"
-
-[functions.whatsapp-webhook]
-verify_jwt = false
-
-[functions.task-deadline-notifications]
-verify_jwt = false
+project_id = "wtjkddzrncsatpxgeilz"
