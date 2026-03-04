@@ -8,7 +8,7 @@ import { OrgProvider } from "@/providers/OrgProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { LandingPage } from "@/pages/LandingPage";
 import { DashboardPage } from "@/pages/Dashboard";
-import { LeadsKanbanPage } from "@/pages/LeadsKanban";
+import { LeadsPage } from "@/pages/Leads";
 import { ContractsCrudPage } from "@/pages/ContractsCrud";
 import { MapViewPage } from "@/pages/MapView";
 import { FinancialPage } from "@/pages/Financial";
@@ -22,7 +22,7 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ArtistDashboardPage } from "@/pages/ArtistDashboard";
 import { SuperAdminPage } from "@/pages/SuperAdmin";
-import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
+
 
 const queryClient = new QueryClient();
 
@@ -46,10 +46,10 @@ const App = () => (
                   <Route path="dashboard" element={<DashboardPage />} />
                   <Route path="artist" element={<ArtistDashboardPage />} />
                   <Route path="calendar" element={<ArtistCalendarPage />} />
-                  <Route path="leads" element={<LeadsKanbanPage />} />
+                  <Route path="leads" element={<LeadsPage />} />
                   <Route path="contracts" element={<ContractsCrudPage />} />
                   <Route path="contacts" element={<ContactsPage />} />
-                  <Route path="whatsapp" element={<WhatsAppInboxPage />} />
+                  
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="users" element={<UsersPage />} />
