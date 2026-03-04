@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,7 @@ const priorityColors = {
 
 export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProps) {
   const { activeOrgId } = useOrg();
+  const navigate = useNavigate();
   const [activities] = useState(mockActivities);
   const [tasks, setTasks] = useState(mockTasks);
   const [newNote, setNewNote] = useState("");
@@ -248,6 +250,7 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
             <MessageCircle className="h-4 w-4" />
             WhatsApp
           </TabsTrigger>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/app/whatsapp?lead_id=${lead.id}`)}>Abrir conversa</Button>
           <TabsTrigger value="tasks" className="gap-2">
             <ListTodo className="h-4 w-4" />
             Tarefas
