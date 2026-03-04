@@ -22,7 +22,7 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ArtistDashboardPage } from "@/pages/ArtistDashboard";
 import { SuperAdminPage } from "@/pages/SuperAdmin";
-import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
+
 
 const queryClient = new QueryClient();
 
