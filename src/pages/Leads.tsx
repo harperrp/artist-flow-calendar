@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useFunnelStages } from "@/hooks/useCrmQueries";
 import { useAllLeadsFinancials } from "@/hooks/useLeadFinancials";
