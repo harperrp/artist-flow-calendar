@@ -8,7 +8,7 @@ import { OrgProvider } from "@/providers/OrgProvider";
 import { AppShell } from "@/components/layout/AppShell";
 import { LandingPage } from "@/pages/LandingPage";
 import { DashboardPage } from "@/pages/Dashboard";
-import { LeadsKanbanPage } from "@/pages/LeadsKanban";
+import { LeadsPage } from "@/pages/Leads";
 import { ContractsCrudPage } from "@/pages/ContractsCrud";
 import { MapViewPage } from "@/pages/MapView";
 import { FinancialPage } from "@/pages/Financial";
