@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useFunnelStages } from "@/hooks/useCrmQueries";
 import { useAllLeadsFinancials } from "@/hooks/useLeadFinancials";
@@ -27,6 +28,7 @@ import {
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
+import { WhatsAppConfigPanel } from "@/components/leads/WhatsAppConfigPanel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ExportButton } from "@/components/ui/export-button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -229,7 +231,7 @@ export function LeadsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">Gerencie leads e conversas WhatsApp</p>
+          <p className="text-sm text-muted-foreground">Gerencie leads, conversas e integração WhatsApp</p>
         </div>
         <div className="flex items-center gap-3">
           <Card className="px-4 py-2 border bg-card/70 flex items-center gap-2">
@@ -270,25 +272,132 @@ export function LeadsPage() {
         </Select>
       </div>
 
-      {leads.length === 0 ? (
-        <EmptyState
-          icon={Handshake}
-          title="Nenhum lead cadastrado"
-          description="Comece adicionando seu primeiro lead."
-          action={{ label: "Criar lead", onClick: () => setDialogOpen(true) }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-320px)]">
-          {/* Lead List */}
-          <Card className="overflow-hidden flex flex-col">
-            <div className="p-3 border-b text-sm font-semibold flex items-center justify-between">
-              <span>{filteredLeads.length} leads</span>
+      <Tabs defaultValue="leads" className="w-full">
+        <TabsList>
+          <TabsTrigger value="leads" className="gap-2">
+            <Handshake className="h-4 w-4" /> Leads
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="gap-2">
+            <MessageCircle className="h-4 w-4" /> WhatsApp Web
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="leads" className="mt-4">
+          {leads.length === 0 ? (
+            <EmptyState
+              icon={Handshake}
+              title="Nenhum lead cadastrado"
+              description="Comece adicionando seu primeiro lead."
+              action={{ label: "Criar lead", onClick: () => setDialogOpen(true) }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-380px)]">
+              {/* Lead List */}
+              <Card className="overflow-hidden flex flex-col">
+                <div className="p-3 border-b text-sm font-semibold flex items-center justify-between">
+                  <span>{filteredLeads.length} leads</span>
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="p-2 space-y-1">
+                    {filteredLeads.map((lead: any) => {
+                      const stageObj = stageList.find((s) => s.name === lead.stage);
+                      return (
+                        <button
+                          key={lead.id}
+                          onClick={() => setSelectedLeadId(lead.id)}
+                          className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                            selectedLeadId === lead.id
+                              ? "bg-primary/10 border-primary"
+                              : "hover:bg-muted/50 border-transparent"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-sm truncate">{lead.contractor_name}</div>
+                              <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                {[lead.city, lead.state].filter(Boolean).join(" / ") || "Sem localização"}
+                              </div>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] shrink-0"
+                              style={{
+                                borderColor: stageObj?.color || undefined,
+                                color: stageObj?.color || undefined,
+                              }}
+                            >
+                              {lead.stage}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            {lead.origin && (
+                              <Badge variant="secondary" className="text-[10px]">{lead.origin}</Badge>
+                            )}
+                            {lead.fee && (
+                              <span className="text-xs font-medium text-green-600">
+                                {formatMoneyBRL(lead.fee)}
+                              </span>
+                            )}
+                            {lead.contact_phone && (
+                              <MessageCircle className="h-3 w-3 text-green-500 ml-auto" />
+                            )}
+                          </div>
+                          <KanbanFinancialBadge leadFee={lead.fee} transactions={txByLead[lead.id] ?? []} />
+                          {lead.last_message_preview && (
+                            <div className="text-[11px] text-muted-foreground truncate mt-1 italic">
+                              {lead.last_message_preview}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </Card>
+
+              {/* Detail + WhatsApp Panel */}
+              <Card className="overflow-hidden flex flex-col">
+                {selectedLead ? (
+                  <>
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                      <LeadDetailPanel
+                        lead={selectedLead}
+                        onUpdate={() => refetch()}
+                        onClose={() => setSelectedLeadId(null)}
+                      />
+                    </div>
+                    {selectedLead.contact_phone && (
+                      <div className="p-3 border-t flex gap-2 bg-background">
+                        <Input
+                          value={waText}
+                          onChange={(e) => setWaText(e.target.value)}
+                          placeholder="Enviar mensagem WhatsApp..."
+                          onKeyDown={(e) => e.key === "Enter" && sendWhatsAppMessage()}
+                        />
+                        <Button onClick={sendWhatsAppMessage} className="gap-2">
+                          <Send className="h-4 w-4" /> Enviar
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                    Selecione um lead para ver detalhes e conversa WhatsApp
+                  </div>
+                )}
+              </Card>
             </div>
-            <ScrollArea className="flex-1">
-              <div className="p-2 space-y-1">
-                {filteredLeads.map((lead: any) => {
-                  const stageObj = stageList.find((s) => s.name === lead.stage);
-                  return (
+          )}
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-380px)]">
+            {/* Lead selector for WhatsApp */}
+            <Card className="overflow-hidden flex flex-col">
+              <div className="p-3 border-b text-sm font-semibold">Selecione um lead</div>
+              <ScrollArea className="flex-1">
+                <div className="p-2 space-y-1">
+                  {(leads as any[]).map((lead: any) => (
                     <button
                       key={lead.id}
                       onClick={() => setSelectedLeadId(lead.id)}
@@ -298,84 +407,21 @@ export function LeadsPage() {
                           : "hover:bg-muted/50 border-transparent"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm truncate">{lead.contractor_name}</div>
-                          <div className="text-xs text-muted-foreground truncate mt-0.5">
-                            {[lead.city, lead.state].filter(Boolean).join(" / ") || "Sem localização"}
-                          </div>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] shrink-0"
-                          style={{
-                            borderColor: stageObj?.color || undefined,
-                            color: stageObj?.color || undefined,
-                          }}
-                        >
-                          {lead.stage}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        {lead.origin && (
-                          <Badge variant="secondary" className="text-[10px]">{lead.origin}</Badge>
-                        )}
-                        {lead.fee && (
-                          <span className="text-xs font-medium text-green-600">
-                            {formatMoneyBRL(lead.fee)}
-                          </span>
-                        )}
-                        {lead.contact_phone && (
-                          <MessageCircle className="h-3 w-3 text-green-500 ml-auto" />
-                        )}
-                      </div>
-                      <KanbanFinancialBadge leadFee={lead.fee} transactions={txByLead[lead.id] ?? []} />
-                      {lead.last_message_preview && (
-                        <div className="text-[11px] text-muted-foreground truncate mt-1 italic">
-                          {lead.last_message_preview}
-                        </div>
-                      )}
+                      <div className="font-semibold text-sm truncate">{lead.contractor_name}</div>
+                      <div className="text-xs text-muted-foreground">{lead.contact_phone || "Sem telefone"}</div>
                     </button>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </Card>
-
-          {/* Detail + WhatsApp Panel */}
-          <Card className="overflow-hidden flex flex-col">
-            {selectedLead ? (
-              <>
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  <LeadDetailPanel
-                    lead={selectedLead}
-                    onUpdate={() => refetch()}
-                    onClose={() => setSelectedLeadId(null)}
-                  />
+                  ))}
                 </div>
-                {/* WhatsApp input bar at bottom */}
-                {selectedLead.contact_phone && (
-                  <div className="p-3 border-t flex gap-2 bg-background">
-                    <Input
-                      value={waText}
-                      onChange={(e) => setWaText(e.target.value)}
-                      placeholder="Enviar mensagem WhatsApp..."
-                      onKeyDown={(e) => e.key === "Enter" && sendWhatsAppMessage()}
-                    />
-                    <Button onClick={sendWhatsAppMessage} className="gap-2">
-                      <Send className="h-4 w-4" /> Enviar
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                Selecione um lead para ver detalhes e conversa WhatsApp
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
+              </ScrollArea>
+            </Card>
+
+            {/* WhatsApp Config Panel */}
+            <Card className="overflow-hidden">
+              <WhatsAppConfigPanel selectedLeadId={selectedLeadId} selectedLead={selectedLead} />
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Lead Dialog */}
       <LeadDialog
