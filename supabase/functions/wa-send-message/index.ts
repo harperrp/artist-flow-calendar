@@ -75,9 +75,9 @@ Deno.serve(async (req) => {
       raw_payload: waResponse,
     });
 
+    // Update lead last message info (columns may not exist yet)
     await supabase.from("leads").update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: text || "[mídia]",
+      updated_at: new Date().toISOString(),
     }).eq("id", lead.id);
 
     return new Response(JSON.stringify({ ok: true, response: waResponse }), {
