@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     const { data: lead, error: leadErr } = await supabase
       .from("leads")
-      .select("id, organization_id, contact_phone, whatsapp_phone")
+      .select("id, organization_id, contact_phone")
       .eq("id", lead_id)
       .single();
     if (leadErr || !lead) throw leadErr || new Error("Lead not found");
