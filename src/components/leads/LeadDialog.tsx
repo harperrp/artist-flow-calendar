@@ -24,9 +24,6 @@ import { CityAutocomplete } from "@/components/ui/city-autocomplete";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Navigation, Map } from "lucide-react";
 import { MapPickerDialog } from "./MapPickerDialog";
-import type { FunnelStage } from "@/lib/calendar-types";
-
-const STAGES: FunnelStage[] = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
 const CONTRACTOR_TYPES = ["Prefeitura", "Casa de Show", "Evento Privado", "Festival", "Outro"];
 const ORIGIN_OPTIONS = ["WhatsApp", "Kommo", "Instagram", "Site", "Indicação", "Telefone", "Outro"];
 const STATES = [
@@ -61,9 +58,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   initialData?: any;
   onResult: (data: FormValues | null) => void;
+  stages?: string[];
 };
 
-export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props) {
+export function LeadDialog({ open, onOpenChange, initialData, onResult, stages = [] }: Props) {
   const isEdit = !!initialData;
   const [cityInput, setCityInput] = useState("");
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
@@ -87,7 +85,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
       contact_email: "",
       origin: "",
       notes: "",
-      stage: "Prospecção",
+      stage: stages[0] ?? "Negociação",
     },
   });
 
@@ -111,15 +109,15 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
           contact_email: initialData.contact_email || "",
           origin: initialData.origin || "",
           notes: initialData.notes || "",
-          stage: initialData.stage || "Prospecção",
+          stage: initialData.stage || stages[0] || "Negociação",
         });
         setCityInput(initialData.city || "");
       } else {
-        form.reset();
+        form.reset({ stage: stages[0] ?? "Negociação" });
         setCityInput("");
       }
     }
-  }, [open, initialData, form]);
+  }, [open, initialData, form, stages]);
 
   function handleCitySelect(city: string, state: string) {
     setCityInput(city);
@@ -257,7 +255,7 @@ export function LeadDialog({ open, onOpenChange, initialData, onResult }: Props)
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STAGES.map((s) => (
+                  {stages.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>

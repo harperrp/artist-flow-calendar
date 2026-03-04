@@ -18,6 +18,23 @@ export function useLeads(orgId: string | null) {
   });
 }
 
+export function useFunnelStages(orgId: string | null) {
+  return useQuery({
+    queryKey: ["funnel_stages", orgId],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("funnel_stages")
+        .select("*")
+        .eq("organization_id", orgId)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+}
+
 export function useContracts(orgId: string | null) {
   return useQuery({
     queryKey: ["contracts", orgId],
