@@ -143,7 +143,6 @@ const priorityColors = {
 export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProps) {
   const { activeOrgId } = useOrg();
   const [activities] = useState(mockActivities);
-  const [activities] = useState(mockActivities);
   const [tasks, setTasks] = useState(mockTasks);
   const [newNote, setNewNote] = useState("");
   const [newTask, setNewTask] = useState("");
