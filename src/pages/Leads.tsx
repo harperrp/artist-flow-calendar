@@ -231,7 +231,7 @@ export function LeadsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">Gerencie leads e conversas WhatsApp</p>
+          <p className="text-sm text-muted-foreground">Gerencie leads, conversas e integração WhatsApp</p>
         </div>
         <div className="flex items-center gap-3">
           <Card className="px-4 py-2 border bg-card/70 flex items-center gap-2">
