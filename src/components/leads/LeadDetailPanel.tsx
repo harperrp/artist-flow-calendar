@@ -250,7 +250,6 @@ export function LeadDetailPanel({ lead, onClose, onUpdate }: LeadDetailPanelProp
             <MessageCircle className="h-4 w-4" />
             WhatsApp
           </TabsTrigger>
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/app/whatsapp?lead_id=${lead.id}`)}>Abrir conversa</Button>
           <TabsTrigger value="tasks" className="gap-2">
             <ListTodo className="h-4 w-4" />
             Tarefas
