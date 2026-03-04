@@ -78,8 +78,6 @@ Deno.serve(async (req) => {
     await supabase.from("leads").update({
       last_message_at: new Date().toISOString(),
       last_message_preview: text || "[mídia]",
-      whatsapp_phone: to,
-      contact_phone: to,
     }).eq("id", lead.id);
 
     return new Response(JSON.stringify({ ok: true, response: waResponse }), {
