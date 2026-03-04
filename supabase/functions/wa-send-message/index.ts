@@ -28,13 +28,13 @@ Deno.serve(async (req) => {
 
     const { data: lead, error: leadErr } = await supabase
       .from("leads")
-      .select("id, organization_id, contact_phone, whatsapp_phone")
+      .select("id, organization_id, contact_phone")
       .eq("id", lead_id)
       .single();
     if (leadErr || !lead) throw leadErr || new Error("Lead not found");
 
-    const to = normalizePhone(lead.whatsapp_phone || lead.contact_phone || "");
-    if (!to) throw new Error("Lead without WhatsApp phone");
+    const to = normalizePhone(lead.contact_phone || "");
+    if (!to) throw new Error("Lead without phone number");
 
     const payload = media_url
       ? {
@@ -75,11 +75,9 @@ Deno.serve(async (req) => {
       raw_payload: waResponse,
     });
 
+    // Update lead last message info (columns may not exist yet)
     await supabase.from("leads").update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: text || "[mídia]",
-      whatsapp_phone: to,
-      contact_phone: to,
+      updated_at: new Date().toISOString(),
     }).eq("id", lead.id);
 
     return new Response(JSON.stringify({ ok: true, response: waResponse }), {
