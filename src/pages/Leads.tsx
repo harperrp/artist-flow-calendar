@@ -28,6 +28,7 @@ import {
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
+import { WhatsAppConfigPanel } from "@/components/leads/WhatsAppConfigPanel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ExportButton } from "@/components/ui/export-button";
 import { useQueryClient } from "@tanstack/react-query";
