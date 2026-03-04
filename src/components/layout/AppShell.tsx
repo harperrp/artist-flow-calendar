@@ -75,7 +75,7 @@ export function AppShell() {
     { to: "/app/leads", icon: Handshake, label: "Leads", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/contracts", icon: FileText, label: "Contratos", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/contacts", icon: Users, label: "Contatos", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/whatsapp", icon: MessageSquare, label: "WhatsApp", roles: ["admin", "comercial", "financeiro"] },
+    
     { to: "/app/tasks", icon: ListChecks, label: "Tarefas", roles: ["admin", "comercial", "financeiro", "artista"] },
     { to: "/app/team", icon: UsersRound, label: "Equipe", roles: ["admin"] },
     { to: "/app/users", icon: UserCog, label: "Usuários", roles: ["admin"] },

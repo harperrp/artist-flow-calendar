@@ -49,7 +49,7 @@ const App = () => (
                   <Route path="leads" element={<LeadsPage />} />
                   <Route path="contracts" element={<ContractsCrudPage />} />
                   <Route path="contacts" element={<ContactsPage />} />
-                  <Route path="whatsapp" element={<WhatsAppInboxPage />} />
+                  
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="users" element={<UsersPage />} />
