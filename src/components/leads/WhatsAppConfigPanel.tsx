@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,33 @@ interface WhatsAppConfigPanelProps {
 }
 
 export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppConfigPanelProps) {
+  const WHATSAPP_WEB_TARGET = "afc-whatsapp-web";
   const { activeOrgId } = useOrg();
   const { data: messages = [] } = useLeadMessages(selectedLeadId || "");
   const [apiStatus, setApiStatus] = useState<"unknown" | "checking" | "connected" | "error">("unknown");
+  const whatsappWindowRef = useRef<Window | null>(null);
+
+  function openOrFocusWhatsApp(url: string) {
+    const alreadyOpen = whatsappWindowRef.current && !whatsappWindowRef.current.closed;
+
+    if (alreadyOpen) {
+      whatsappWindowRef.current.location.href = url;
+      whatsappWindowRef.current.focus();
+      return;
+    }
+
+    const popup = window.open(url, WHATSAPP_WEB_TARGET, "noopener,noreferrer");
+
+    if (!popup) {
+      toast.error("Não foi possível abrir o WhatsApp Web", {
+        description: "Permita popups para este site e tente novamente.",
+      });
+      return;
+    }
+
+    whatsappWindowRef.current = popup;
+    popup.focus();
+  }
 
   const browserSnippet = useMemo(
     () => `(() => {
@@ -315,7 +339,7 @@ export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppCo
             size="sm"
             variant="outline"
             className="gap-1.5"
-            onClick={() => window.open("https://web.whatsapp.com", "_blank")}
+            onClick={() => openOrFocusWhatsApp("https://web.whatsapp.com")}
           >
             <ExternalLink className="h-3 w-3" />
             Abrir WhatsApp Web
@@ -326,10 +350,7 @@ export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppCo
               variant="outline"
               className="gap-1.5"
               onClick={() =>
-                window.open(
-                  `https://wa.me/${selectedLead.contact_phone.replace(/\D/g, "")}`,
-                  "_blank"
-                )
+                openOrFocusWhatsApp(`https://wa.me/${selectedLead.contact_phone.replace(/\D/g, "")}`)
               }
             >
               <Phone className="h-3 w-3" />
@@ -344,8 +365,8 @@ export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppCo
             <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
             <div className="text-xs text-muted-foreground space-y-1">
               <p>
-                <strong>Modo atual:</strong> Use o WhatsApp Web em uma aba separada.
-                Mensagens enviadas pela API oficial aparecem aqui automaticamente.
+                <strong>Modo atual:</strong> O WhatsApp Web abre em janela dedicada e reutilizável.
+                Após autenticar no QR Code, os próximos cliques reutilizam a mesma janela.
               </p>
               <p>
                 <strong>Para ativar a API:</strong> Compre um número no Meta Business,
