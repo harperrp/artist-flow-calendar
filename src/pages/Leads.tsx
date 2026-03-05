@@ -52,6 +52,15 @@ import { LeadMessagesThread } from "@/components/leads/LeadMessagesThread";
 
 type Stage = { id: string; name: string; color: string; position: number };
 
+const DEFAULT_STAGES: Stage[] = [
+  { id: "default-1", name: "Prospecção", color: "#64748b", position: 0 },
+  { id: "default-2", name: "Contato", color: "#3b82f6", position: 1 },
+  { id: "default-3", name: "Proposta", color: "#f59e0b", position: 2 },
+  { id: "default-4", name: "Negociação", color: "#8b5cf6", position: 3 },
+  { id: "default-5", name: "Contrato", color: "#10b981", position: 4 },
+  { id: "default-6", name: "Fechado", color: "#22c55e", position: 5 },
+];
+
 export function LeadsPage() {
   const { activeOrgId } = useOrg();
   const { data: leads = [], refetch } = useLeads(activeOrgId);
@@ -75,7 +84,7 @@ export function LeadsPage() {
   const [deleteStageId, setDeleteStageId] = useState<string | null>(null);
   const [moveToStage, setMoveToStage] = useState("");
 
-  const stageList = (stages as Stage[]).length ? (stages as Stage[]) : [];
+  const stageList = (stages as Stage[]).length > 0 ? (stages as Stage[]) : DEFAULT_STAGES;
 
   // Realtime
   useEffect(() => {
