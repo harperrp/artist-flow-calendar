@@ -134,6 +134,10 @@ export function LeadsPage() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
+    // Ensure stage is a valid funnel_stage enum value
+    const validStages = ["Prospecção", "Contato", "Proposta", "Negociação", "Contrato", "Fechado"];
+    const stage = validStages.includes(data.stage) ? data.stage : "Prospecção";
+
     const payload = {
       contractor_name: data.contractor_name,
       contractor_type: data.contractor_type || null,
@@ -141,7 +145,7 @@ export function LeadsPage() {
       state: data.state || null,
       event_date: data.event_date || null,
       fee: data.fee || null,
-      stage: data.stage,
+      stage,
       contact_phone: data.contact_phone || null,
       contact_email: data.contact_email || null,
       origin: data.origin || "Manual",
@@ -152,20 +156,25 @@ export function LeadsPage() {
       street_number: data.street_number || null,
       neighborhood: data.neighborhood || null,
       zip_code: data.zip_code || null,
-      whatsapp_phone: data.contact_phone || null,
     };
 
-    const op = editingLead
-      ? db.from("leads").update(payload).eq("id", editingLead.id)
-      : db.from("leads").insert({ ...payload, organization_id: activeOrgId, created_by: user.id });
+    try {
+      const op = editingLead
+        ? db.from("leads").update(payload).eq("id", editingLead.id)
+        : db.from("leads").insert({ ...payload, organization_id: activeOrgId, created_by: user.id });
 
-    const { error } = await op;
-    if (error) {
-      toast.error("Erro ao salvar lead", { description: error.message });
-      return;
+      const { error } = await op;
+      if (error) {
+        toast.error("Erro ao salvar lead", { description: error.message });
+        return;
+      }
+      toast.success(editingLead ? "Lead atualizado!" : "Lead criado com sucesso!");
+      setDialogOpen(false);
+      setEditingLead(null);
+      queryClient.invalidateQueries({ queryKey: ["leads", activeOrgId] });
+    } catch (err: any) {
+      toast.error("Erro inesperado", { description: err.message });
     }
-    setDialogOpen(false);
-    refetch();
   }
 
   async function sendWhatsAppMessage() {
