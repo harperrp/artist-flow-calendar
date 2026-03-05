@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,13 @@ import {
   MessageCircle,
   ExternalLink,
   Settings2,
-  CheckCircle2,
   AlertTriangle,
   Phone,
   FileText,
   UserPlus,
   Wifi,
   WifiOff,
+  Copy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLeadMessages } from "@/hooks/useFinanceQueries";
@@ -31,6 +31,195 @@ export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppCo
   const { activeOrgId } = useOrg();
   const { data: messages = [] } = useLeadMessages(selectedLeadId || "");
   const [apiStatus, setApiStatus] = useState<"unknown" | "checking" | "connected" | "error">("unknown");
+
+  const browserSnippet = useMemo(
+    () => `(() => {
+  const WHATSAPP_URL = "https://web.whatsapp.com";
+  const CHAT_SELECTOR = '[data-testid="cell-frame-container"]';
+  const SCAN_INTERVAL_MS = 3000;
+
+  const state = {
+    data: [],
+    seen: new Set(),
+    observer: null,
+    interval: null,
+  };
+
+  function log(...args) {
+    console.log("[WA-Collector]", ...args);
+  }
+
+  function normalizeDigits(v) {
+    if (!v) return "";
+    return String(v).replace(/\\D+/g, "");
+  }
+
+  function last12Digits(v) {
+    const d = normalizeDigits(v);
+    return d.length > 12 ? d.slice(-12) : d;
+  }
+
+  function getNameFromCell(cell) {
+    const imgAlt = cell.querySelector("img[alt]")?.getAttribute("alt")?.trim();
+    if (imgAlt) return imgAlt;
+
+    const byClass = cell.querySelector("span._21nHd")?.textContent?.trim();
+    if (byClass) return byClass;
+
+    const genericSpan = [...cell.querySelectorAll("span")]
+      .map((s) => s.textContent?.trim())
+      .find((t) => t && t.length > 0);
+    return genericSpan || "Sem nome";
+  }
+
+  function getNumberFromCell(cell) {
+    const spanWithTitle = cell.querySelector("span[title]")?.getAttribute("title")?.trim();
+    const titleDigits = normalizeDigits(spanWithTitle);
+    if (titleDigits) return titleDigits;
+
+    const dataId =
+      cell.getAttribute("data-id") ||
+      cell.dataset?.id ||
+      cell.querySelector("[data-id]")?.getAttribute("data-id") ||
+      "";
+    const fromDataId = last12Digits(dataId);
+    if (fromDataId) return fromDataId;
+
+    const cellText = cell.textContent || "";
+    const textDigits = normalizeDigits(cellText);
+    if (textDigits.length >= 8) return last12Digits(textDigits);
+
+    return "desconhecido";
+  }
+
+  function addIfNew(nome, numero, source = "scan") {
+    const key = \`\${nome}::\${numero}\`;
+    if (state.seen.has(key)) return;
+    state.seen.add(key);
+
+    const obj = { nome, numero };
+    state.data.push(obj);
+    log(\`Novo contato [\${source}] ->\`, obj);
+  }
+
+  function scanVisibleChats(source = "scan") {
+    const cells = document.querySelectorAll(CHAT_SELECTOR);
+    if (!cells.length) return;
+
+    cells.forEach((cell) => {
+      const nome = getNameFromCell(cell);
+      const numero = getNumberFromCell(cell);
+      addIfNew(nome, numero, source);
+    });
+  }
+
+  function installMutationObserver() {
+    const root =
+      document.querySelector("#pane-side") ||
+      document.querySelector("[data-testid='chat-list']") ||
+      document.body;
+
+    if (!root) {
+      log("Root não encontrado para MutationObserver.");
+      return;
+    }
+
+    if (state.observer) state.observer.disconnect();
+
+    state.observer = new MutationObserver(() => {
+      scanVisibleChats("mutation");
+    });
+
+    state.observer.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+    });
+
+    log("MutationObserver ativo.");
+  }
+
+  function startCollector() {
+    if (window.__waContactsCollector?.running) {
+      log("Coletor já está em execução.");
+      return;
+    }
+
+    installMutationObserver();
+    scanVisibleChats("initial");
+
+    state.interval = setInterval(() => {
+      scanVisibleChats("interval");
+    }, SCAN_INTERVAL_MS);
+
+    window.__waContactsCollector = {
+      running: true,
+      data: state.data,
+      stop() {
+        if (state.observer) state.observer.disconnect();
+        if (state.interval) clearInterval(state.interval);
+        window.__waContactsCollector.running = false;
+        log("Coletor parado. Total:", state.data.length);
+      },
+      rescan() {
+        scanVisibleChats("manual");
+        return state.data;
+      },
+      export() {
+        return JSON.parse(JSON.stringify(state.data));
+      },
+    };
+
+    log("Coletor iniciado. Novos contatos aparecerão em tempo real no console.");
+  }
+
+  function waitForWhatsAppAndStart() {
+    const isWhatsApp = location.hostname === "web.whatsapp.com";
+    if (!isWhatsApp) {
+      log("Abrindo WhatsApp Web em nova aba...");
+      window.open(WHATSAPP_URL, "_blank", "noopener,noreferrer");
+      log("Execute este mesmo snippet no console da aba do WhatsApp Web.");
+      return;
+    }
+
+    const ready = () =>
+      document.readyState === "complete" &&
+      (document.querySelector(CHAT_SELECTOR) ||
+        document.querySelector("#pane-side") ||
+        document.querySelector("[data-testid='chat-list']"));
+
+    if (ready()) {
+      startCollector();
+      return;
+    }
+
+    log("Aguardando carregamento completo do WhatsApp Web...");
+    const bootObserver = new MutationObserver(() => {
+      if (ready()) {
+        bootObserver.disconnect();
+        startCollector();
+      }
+    });
+
+    bootObserver.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  waitForWhatsAppAndStart();
+})();`,
+    []
+  );
+
+  async function copySnippet() {
+    try {
+      await navigator.clipboard.writeText(browserSnippet);
+      toast.success("Snippet copiado para a área de transferência");
+    } catch {
+      toast.error("Não foi possível copiar automaticamente. Selecione e copie manualmente.");
+    }
+  }
 
   async function checkApiStatus() {
     setApiStatus("checking");
@@ -164,6 +353,18 @@ export function WhatsAppConfigPanel({ selectedLeadId, selectedLead }: WhatsAppCo
               </p>
             </div>
           </div>
+        </Card>
+
+        <Card className="p-3 bg-muted/40">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs font-medium">Snippet para coletar contatos no WhatsApp Web (console)</p>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={copySnippet}>
+              <Copy className="h-3 w-3 mr-1" /> Copiar snippet
+            </Button>
+          </div>
+          <pre className="text-[11px] bg-background border rounded-md p-2 overflow-x-auto max-h-36">
+            <code>{browserSnippet}</code>
+          </pre>
         </Card>
       </div>
 
