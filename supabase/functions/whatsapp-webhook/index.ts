@@ -165,6 +165,8 @@ Deno.serve(async (req) => {
 
           if (!lead?.id) continue;
 
+          const now = new Date().toISOString();
+
           await supabase.from("lead_messages").insert({
             organization_id: org.id,
             lead_id: lead.id,
@@ -174,15 +176,41 @@ Deno.serve(async (req) => {
             media_url: mediaUrl,
             wa_id: waId,
             raw_payload: msg,
+            status: "received",
+            delivered_at: now,
+          });
+
+          await supabase.from("whatsapp_conversations").upsert({
+            organization_id: org.id,
+            lead_id: lead.id,
+            contact_phone: waId,
+            contact_name: name,
+            city: null,
+            region: null,
+            stage: firstStage?.name ?? "Negociação",
+            last_message: messageText || "[mídia]",
+            last_message_at: now,
+            unread_count: 1,
+            updated_at: now,
+          }, { onConflict: "organization_id,contact_phone" });
+
+          await supabase.from("lead_interactions").insert({
+            organization_id: org.id,
+            lead_id: lead.id,
+            event_type: "message_received",
+            payload: { text: messageText || "[mídia]", type: messageType },
           });
 
           await supabase
             .from("leads")
             .update({
-              last_message_at: new Date().toISOString(),
+              last_contact_at: now,
+              last_message_at: now,
+              last_message: messageText || "[mídia]",
               last_message_preview: messageText || "[mídia]",
               whatsapp_phone: waId,
               contact_phone: waId,
+              unread_count: 1,
             })
             .eq("id", lead.id);
         }

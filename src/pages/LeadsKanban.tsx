@@ -27,6 +27,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Edit2, TrendingUp, Handshake, MessageCircle, ArrowUp, ArrowDown, Trash2, Settings2 } from "lucide-react";
 import { formatMoneyBRL } from "@/lib/calendar-utils";
+import { formatDistanceToNowStrict } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { LeadDialog } from "@/components/leads/LeadDialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ExportButton } from "@/components/ui/export-button";
@@ -250,9 +252,20 @@ export function LeadsKanbanPage() {
                               </div>
                               {lead.origin && <Badge variant="secondary" className="mt-2 text-xs">{lead.origin}</Badge>}
                               {lead.contact_phone && (
-                                <a href={`https://wa.me/${lead.contact_phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-green-600">
-                                  <MessageCircle className="h-3 w-3" /> WhatsApp
+                                <a href={`/app/whatsapp?lead_id=${lead.id}`} className="mt-2 inline-flex items-center gap-1 text-xs text-green-600">
+                                  <MessageCircle className="h-3 w-3" /> Abrir conversa
                                 </a>
+                              )}
+                              {lead.last_message_preview && (
+                                <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{lead.last_message_preview}</p>
+                              )}
+                              {lead.last_message_at && (
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  Última interação {formatDistanceToNowStrict(new Date(lead.last_message_at), { addSuffix: true, locale: ptBR })}
+                                </p>
+                              )}
+                              {!!lead.unread_count && lead.unread_count > 0 && (
+                                <Badge className="mt-2 text-[10px]">Sem resposta: {lead.unread_count}</Badge>
                               )}
                               <KanbanFinancialBadge leadFee={lead.fee} transactions={txByLead[lead.id] ?? []} />
                             </Card>

@@ -357,7 +357,9 @@ export function LeadsPage() {
                               </span>
                             )}
                             {lead.contact_phone && (
-                              <MessageCircle className="h-3 w-3 text-green-500 ml-auto" />
+                              <a href={`/app/whatsapp?lead_id=${lead.id}`} className="ml-auto text-green-600 text-[11px] inline-flex items-center gap-1">
+                                <MessageCircle className="h-3 w-3" /> Abrir conversa
+                              </a>
                             )}
                           </div>
                           <KanbanFinancialBadge leadFee={lead.fee} transactions={txByLead[lead.id] ?? []} />

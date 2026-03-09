@@ -23,6 +23,7 @@ import {
   X,
   Music,
   Crown,
+  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { QuickAddMenu } from "./QuickAddMenu";
@@ -72,6 +73,7 @@ export function AppShell() {
     { to: "/app/artist", icon: Music, label: "Painel Artista", roles: ["artista", "admin"] },
     { to: "/app/calendar", icon: CalendarDays, label: "Agenda", roles: ["admin", "comercial", "financeiro", "artista"] },
     { to: "/app/leads", icon: Handshake, label: "Leads", roles: ["admin", "comercial", "financeiro"] },
+    { to: "/app/whatsapp", icon: MessageCircle, label: "WhatsApp", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/contracts", icon: FileText, label: "Contratos", roles: ["admin", "comercial", "financeiro"] },
     { to: "/app/contacts", icon: Users, label: "Contatos", roles: ["admin", "comercial", "financeiro"] },
     
