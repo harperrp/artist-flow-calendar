@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useFunnelStages } from "@/hooks/useCrmQueries";
 import { useAllLeadsFinancials } from "@/hooks/useLeadFinancials";
@@ -13,8 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus,
+  Edit2,
   TrendingUp,
   Handshake,
+  MessageCircle,
   Search,
   Send,
   Settings2,
@@ -25,6 +28,7 @@ import {
 import { formatMoneyBRL } from "@/lib/calendar-utils";
 import { LeadDialog } from "@/components/leads/LeadDialog";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
+import { WhatsAppConfigPanel } from "@/components/leads/WhatsAppConfigPanel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ExportButton } from "@/components/ui/export-button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,6 +46,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { LeadMessagesThread } from "@/components/leads/LeadMessagesThread";
 
 type Stage = { id: string; name: string; color: string; position: number };
 
@@ -170,35 +177,21 @@ export function LeadsPage() {
     }
   }
 
-  // Stage management functions
   async function sendWhatsAppMessage() {
     if (!selectedLeadId || !waText.trim()) return;
-
-    if (!selectedLead?.contact_phone) {
-      toast.error("Este lead não possui telefone cadastrado", {
-        description: "Adicione um telefone para enviar mensagens pelo WhatsApp.",
-      });
-      return;
-    }
-
     const { error } = await supabase.functions.invoke("wa-send-message", {
       body: { lead_id: selectedLeadId, text: waText.trim() },
     });
-
     if (error) {
-      const message = error.message?.includes("telefone")
-        ? "Este lead não possui telefone cadastrado"
-        : "Falha ao enviar mensagem";
-      toast.error(message, { description: error.message });
+      toast.error("Falha ao enviar mensagem", { description: error.message });
       return;
     }
-
     setWaText("");
     queryClient.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
     queryClient.invalidateQueries({ queryKey: ["leads", activeOrgId] });
-    toast.success("Mensagem enviada");
   }
 
+  // Stage management functions
   async function addStage() {
     if (!activeOrgId || !newStageName.trim()) return;
     const { error } = await db.from("funnel_stages").insert({
@@ -256,7 +249,7 @@ export function LeadsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">Gerencie leads e acompanhe seu funil comercial</p>
+          <p className="text-sm text-muted-foreground">Gerencie leads, conversas e integração WhatsApp</p>
         </div>
         <div className="flex items-center gap-3">
           <Card className="px-4 py-2 border bg-card/70 flex items-center gap-2">
@@ -297,15 +290,26 @@ export function LeadsPage() {
         </Select>
       </div>
 
-      {leads.length === 0 ? (
-        <EmptyState
-          icon={Handshake}
-          title="Nenhum lead cadastrado"
-          description="Comece adicionando seu primeiro lead."
-          action={{ label: "Criar lead", onClick: () => setDialogOpen(true) }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-380px)]">
+      <Tabs defaultValue="leads" className="w-full">
+        <TabsList>
+          <TabsTrigger value="leads" className="gap-2">
+            <Handshake className="h-4 w-4" /> Leads
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="gap-2">
+            <MessageCircle className="h-4 w-4" /> WhatsApp Web
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="leads" className="mt-4">
+          {leads.length === 0 ? (
+            <EmptyState
+              icon={Handshake}
+              title="Nenhum lead cadastrado"
+              description="Comece adicionando seu primeiro lead."
+              action={{ label: "Criar lead", onClick: () => setDialogOpen(true) }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-380px)]">
               {/* Lead List */}
               <Card className="overflow-hidden flex flex-col">
                 <div className="p-3 border-b text-sm font-semibold flex items-center justify-between">
@@ -352,6 +356,11 @@ export function LeadsPage() {
                                 {formatMoneyBRL(lead.fee)}
                               </span>
                             )}
+                            {lead.contact_phone && (
+                              <a href={`/app/whatsapp?lead_id=${lead.id}`} className="ml-auto text-green-600 text-[11px] inline-flex items-center gap-1">
+                                <MessageCircle className="h-3 w-3" /> Abrir conversa
+                              </a>
+                            )}
                           </div>
                           <KanbanFinancialBadge leadFee={lead.fee} transactions={txByLead[lead.id] ?? []} />
                           {lead.last_message_preview && (
@@ -366,7 +375,7 @@ export function LeadsPage() {
                 </ScrollArea>
               </Card>
 
-              {/* Detail Panel */}
+              {/* Detail + WhatsApp Panel */}
               <Card className="overflow-hidden flex flex-col">
                 {selectedLead ? (
                   <>
@@ -377,26 +386,62 @@ export function LeadsPage() {
                         onClose={() => setSelectedLeadId(null)}
                       />
                     </div>
-                    <div className="p-3 border-t flex gap-2 bg-background">
-                      <Input
-                        value={waText}
-                        onChange={(e) => setWaText(e.target.value)}
-                        placeholder="Enviar mensagem WhatsApp..."
-                        onKeyDown={(e) => e.key === "Enter" && sendWhatsAppMessage()}
-                      />
-                      <Button onClick={sendWhatsAppMessage} className="gap-2" disabled={!waText.trim() || !selectedLead?.contact_phone}>
-                        <Send className="h-4 w-4" /> Enviar
-                      </Button>
-                    </div>
+                    {selectedLead.contact_phone && (
+                      <div className="p-3 border-t flex gap-2 bg-background">
+                        <Input
+                          value={waText}
+                          onChange={(e) => setWaText(e.target.value)}
+                          placeholder="Enviar mensagem WhatsApp..."
+                          onKeyDown={(e) => e.key === "Enter" && sendWhatsAppMessage()}
+                        />
+                        <Button onClick={sendWhatsAppMessage} className="gap-2">
+                          <Send className="h-4 w-4" /> Enviar
+                        </Button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                    Selecione um lead para ver detalhes
+                    Selecione um lead para ver detalhes e conversa WhatsApp
                   </div>
                 )}
               </Card>
             </div>
-      )}
+          )}
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-4 h-[calc(100vh-380px)]">
+            {/* Lead selector for WhatsApp */}
+            <Card className="overflow-hidden flex flex-col">
+              <div className="p-3 border-b text-sm font-semibold">Selecione um lead</div>
+              <ScrollArea className="flex-1">
+                <div className="p-2 space-y-1">
+                  {(leads as any[]).map((lead: any) => (
+                    <button
+                      key={lead.id}
+                      onClick={() => setSelectedLeadId(lead.id)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                        selectedLeadId === lead.id
+                          ? "bg-primary/10 border-primary"
+                          : "hover:bg-muted/50 border-transparent"
+                      }`}
+                    >
+                      <div className="font-semibold text-sm truncate">{lead.contractor_name}</div>
+                      <div className="text-xs text-muted-foreground">{lead.contact_phone || "Sem telefone"}</div>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </Card>
+
+            {/* WhatsApp Config Panel */}
+            <Card className="overflow-hidden">
+              <WhatsAppConfigPanel selectedLeadId={selectedLeadId} selectedLead={selectedLead} />
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Lead Dialog */}
       <LeadDialog

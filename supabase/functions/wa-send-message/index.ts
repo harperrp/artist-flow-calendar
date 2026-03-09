@@ -34,12 +34,7 @@ Deno.serve(async (req) => {
     if (leadErr || !lead) throw leadErr || new Error("Lead not found");
 
     const to = normalizePhone(lead.contact_phone || "");
-    if (!to) {
-      return new Response(JSON.stringify({ error: "Este lead não possui telefone cadastrado." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!to) throw new Error("Lead without phone number");
 
     const { data: pendingMessage, error: pendingError } = await supabase
       .from("lead_messages")
