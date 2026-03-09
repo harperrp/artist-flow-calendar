@@ -1,5 +1,6 @@
 import { useOrg } from "@/providers/OrgProvider";
 import { useLeads, useContracts, useCalendarEvents } from "@/hooks/useCrmQueries";
+import { useUserRole } from "@/hooks/useUserRole";
 import { monthStats } from "@/lib/calendar-utils";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -10,16 +11,17 @@ import { DashboardStats } from "@/components/dashboard/StatsCards";
 import { UpcomingShows } from "@/components/dashboard/UpcomingShows";
 import { PendingTasks } from "@/components/dashboard/PendingTasks";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
+import { FinanceQuickCard } from "@/components/dashboard/FinanceQuickCard";
 import {
   ShowsPerMonthChart,
   RevenueChart,
   FunnelPieChart,
   LeadsPerMonthChart,
 } from "@/components/dashboard/DashboardCharts";
-import { mockLeads, mockEvents, mockFunnelStats } from "@/lib/mock-data";
 
 export function DashboardPage() {
   const { activeOrgId } = useOrg();
+  const { canViewFinancialTotals } = useUserRole();
   const { data: leads = [] } = useLeads(activeOrgId);
   const { data: contracts = [] } = useContracts(activeOrgId);
   const { data: dbEvents = [] } = useCalendarEvents(activeOrgId);
@@ -29,12 +31,8 @@ export function DashboardPage() {
   const monthEnd = endOfMonth(now);
   const monthLabel = format(now, "MMMM yyyy", { locale: ptBR });
 
-  // Use mock data if no real data exists
-  const displayLeads = leads.length > 0 ? leads : mockLeads;
-  const displayEvents = dbEvents.length > 0 ? dbEvents : mockEvents;
-
   // Map DB events to CalendarEvent format for stats
-  const events = displayEvents.map((e: any) => ({
+  const events = dbEvents.map((e: any) => ({
     id: e.id,
     title: e.title,
     status: e.status as "negotiation" | "confirmed" | "blocked" | "hold",
@@ -48,22 +46,22 @@ export function DashboardPage() {
   const stats = monthStats(now, events);
 
   // Calculate additional stats
-  const leadsInNegotiation = displayLeads.filter(
+  const leadsInNegotiation = leads.filter(
     (l: any) => l.stage === "Negociação"
   ).length;
   const totalEstimated =
-    displayLeads.reduce((acc: number, l: any) => acc + (l.fee || 0), 0) +
+    leads.reduce((acc: number, l: any) => acc + (l.fee || 0), 0) +
     stats.estimatedRevenue;
 
   // Shows this month
-  const monthEvents = displayEvents.filter((e: any) => {
+  const monthEvents = dbEvents.filter((e: any) => {
     const d = parseISO(e.start_time);
     return d >= monthStart && d <= monthEnd;
   });
 
   // Map data for preview (leads + events with coordinates)
   const mapMarkers = [
-    ...displayLeads
+    ...leads
       .filter((l: any) => l.latitude && l.longitude)
       .map((l: any) => ({
         id: l.id,
@@ -75,7 +73,7 @@ export function DashboardPage() {
         state: l.state,
         status: l.stage,
       })),
-    ...displayEvents
+    ...dbEvents
       .filter((e: any) => e.latitude && e.longitude)
       .map((e: any) => ({
         id: e.id,
@@ -103,7 +101,7 @@ export function DashboardPage() {
       <DashboardStats
         confirmedShows={stats.confirmedCount}
         negotiationCount={stats.negotiationCount}
-        totalLeads={displayLeads.length}
+        totalLeads={leads.length}
         estimatedRevenue={totalEstimated}
         pendingContracts={contracts.filter((c: any) => c.status === "pending").length}
         freeDays={stats.freeDays}
@@ -139,10 +137,11 @@ export function DashboardPage() {
         <UpcomingShows events={monthEvents} />
       </div>
 
-      {/* Tasks + Activities */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Tasks + Activities + Finance */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <PendingTasks />
         <RecentActivities />
+        {canViewFinancialTotals && <FinanceQuickCard />}
       </div>
     </div>
   );

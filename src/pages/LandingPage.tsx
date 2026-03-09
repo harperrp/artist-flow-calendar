@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import previewDashboard from "@/assets/preview-dashboard.jpg";
+import previewKanban from "@/assets/preview-kanban.jpg";
+import previewCalendar from "@/assets/preview-calendar.jpg";
 import {
   CalendarDays,
   Handshake,
@@ -9,8 +13,6 @@ import {
   LayoutDashboard,
   Map,
   DollarSign,
-  Users,
-  Bell,
   Zap,
   Shield,
   TrendingUp,
@@ -21,8 +23,8 @@ import {
   Play,
   ChevronRight,
   MapPin,
-  BarChart3,
-  Target,
+  Bell,
+  Check,
 } from "lucide-react";
 
 const features = [
@@ -95,6 +97,61 @@ const benefits = [
   },
 ];
 
+const plans = [
+  {
+    name: "Starter",
+    slug: "starter",
+    price: "R$ 97",
+    period: "/mês",
+    description: "Para artistas que estão começando a profissionalizar sua gestão.",
+    features: [
+      "Até 2 usuários",
+      "Agenda e calendário",
+      "Funil de vendas básico",
+      "Até 50 leads/mês",
+      "Suporte por email",
+    ],
+    cta: "Começar Agora",
+    popular: false,
+  },
+  {
+    name: "Profissional",
+    slug: "professional",
+    price: "R$ 197",
+    period: "/mês",
+    description: "Para artistas e produtores com agenda ativa e equipe.",
+    features: [
+      "Até 10 usuários",
+      "Tudo do Starter",
+      "Mapa de oportunidades",
+      "Controle financeiro completo",
+      "Gestão de contratos",
+      "Leads ilimitados",
+      "Suporte prioritário",
+    ],
+    cta: "Assinar Profissional",
+    popular: true,
+  },
+  {
+    name: "Enterprise",
+    slug: "enterprise",
+    price: "R$ 397",
+    period: "/mês",
+    description: "Para agências e escritórios com múltiplos artistas.",
+    features: [
+      "Usuários ilimitados",
+      "Tudo do Profissional",
+      "Multi-artistas",
+      "Relatórios avançados",
+      "API de integração",
+      "Gerente de conta dedicado",
+      "SLA de suporte 24h",
+    ],
+    cta: "Falar com Vendas",
+    popular: false,
+  },
+];
+
 const testimonials = [
   {
     name: "Carlos Silva",
@@ -119,6 +176,45 @@ const testimonials = [
   },
 ];
 
+const previewScreens = [
+  { id: "dashboard", label: "Dashboard", image: previewDashboard, description: "Visão completa dos seus KPIs, agenda e receitas em um único painel." },
+  { id: "kanban", label: "Funil de Vendas", image: previewKanban, description: "Gerencie seus leads com drag-and-drop, da prospecção ao fechamento." },
+  { id: "calendar", label: "Agenda", image: previewCalendar, description: "Calendário visual com código de cores por status e prevenção de conflitos." },
+];
+
+function PreviewTabs() {
+  const [active, setActive] = useState(0);
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-center gap-2 flex-wrap">
+        {previewScreens.map((screen, i) => (
+          <Button
+            key={screen.id}
+            variant={active === i ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActive(i)}
+            className="gap-2"
+          >
+            {screen.label}
+          </Button>
+        ))}
+      </div>
+
+      <div className="relative rounded-2xl border bg-card shadow-2xl overflow-hidden">
+        <img
+          src={previewScreens[active].image}
+          alt={`Preview do ${previewScreens[active].label}`}
+          className="w-full h-auto"
+        />
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/90 to-transparent p-6 md:p-8">
+          <h3 className="text-xl font-bold mb-1">{previewScreens[active].label}</h3>
+          <p className="text-muted-foreground max-w-lg">{previewScreens[active].description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -135,20 +231,20 @@ export function LandingPage() {
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Funcionalidades
             </a>
-            <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Benefícios
+            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Planos
             </a>
             <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Depoimentos
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/app">
+            <Link to="/login">
               <Button variant="ghost" size="sm">
                 Entrar
               </Button>
             </Link>
-            <Link to="/app">
+            <Link to="/login?plan=professional">
               <Button size="sm" className="gap-2">
                 Começar Grátis
                 <ArrowRight className="h-4 w-4" />
@@ -184,16 +280,18 @@ export function LandingPage() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/app">
+                <Link to="/login?plan=professional">
                   <Button size="lg" className="gap-2 w-full sm:w-auto text-base px-8">
                     Começar Agora — É Grátis
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="gap-2 w-full sm:w-auto text-base">
-                  <Play className="h-5 w-5" />
-                  Ver Demonstração
-                </Button>
+                <a href="#pricing">
+                  <Button variant="outline" size="lg" className="gap-2 w-full sm:w-auto text-base">
+                    <Play className="h-5 w-5" />
+                    Ver Planos
+                  </Button>
+                </a>
               </div>
               
               <div className="flex items-center gap-8 pt-4">
@@ -224,7 +322,6 @@ export function LandingPage() {
             <div className="relative">
               <div className="relative rounded-2xl border bg-card p-2 shadow-2xl">
                 <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-6">
-                  {/* Mock Dashboard */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
@@ -253,7 +350,7 @@ export function LandingPage() {
                         <CalendarDays className="h-5 w-5 text-primary" />
                         <span className="font-medium">Próximos Shows</span>
                       </div>
-                      {["São Paulo - 15/02", "Rio de Janeiro - 22/02", "Curitiba - 01/03"].map((show) => (
+                      {["São Paulo - 15/03", "Rio de Janeiro - 22/03", "Curitiba - 01/04"].map((show) => (
                         <div key={show} className="flex items-center gap-2 py-2 border-b last:border-0">
                           <div className="h-2 w-2 rounded-full bg-primary" />
                           <span className="text-sm">{show}</span>
@@ -293,6 +390,23 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* System Preview Section */}
+      <section className="border-t py-20 md:py-28 bg-background">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4">Veja na Prática</Badge>
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl mb-4">
+              Conheça o sistema por dentro
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Interface moderna e intuitiva, feita para você focar no que importa: fechar mais shows.
+            </p>
+          </div>
+
+          <PreviewTabs />
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="border-t bg-muted/30 py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -307,7 +421,7 @@ export function LandingPage() {
           </div>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, i) => (
+            {features.map((feature) => (
               <Card
                 key={feature.title}
                 className="group relative overflow-hidden border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/50"
@@ -355,8 +469,72 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="border-t bg-muted/30 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Planos</Badge>
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl mb-4">
+              Escolha o plano ideal para você
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Comece grátis e escale conforme sua carreira cresce. Cancele quando quiser.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
+            {plans.map((plan) => (
+              <Card
+                key={plan.slug}
+                className={`relative flex flex-col p-8 transition-all hover:shadow-lg ${
+                  plan.popular
+                    ? "border-primary shadow-lg ring-2 ring-primary/20 scale-[1.02]"
+                    : "border"
+                }`}
+              >
+                {plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4">
+                    Mais Popular
+                  </Badge>
+                )}
+                
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                </div>
+                
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground">{plan.period}</span>
+                </div>
+                
+                <ul className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Link to={`/login?plan=${plan.slug}&mode=signup`}>
+                  <Button
+                    className="w-full gap-2"
+                    variant={plan.popular ? "default" : "outline"}
+                    size="lg"
+                  >
+                    {plan.cta}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
-      <section id="testimonials" className="border-t bg-muted/30 py-20 md:py-28">
+      <section id="testimonials" className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4">Depoimentos</Badge>
@@ -397,20 +575,22 @@ export function LandingPage() {
               Pronto para transformar sua carreira?
             </h2>
             <p className="text-lg opacity-90 mb-8 max-w-xl mx-auto">
-              Comece agora gratuitamente e veja como o ShowCRM pode revolucionar 
+              Comece agora e veja como o ShowCRM pode revolucionar 
               a gestão dos seus shows.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/app">
+              <Link to="/login?plan=professional&mode=signup">
                 <Button size="lg" variant="secondary" className="gap-2 text-base px-8 w-full sm:w-auto">
                   Criar Conta Grátis
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2 text-base border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
-                Falar com Vendas
-                <ChevronRight className="h-5 w-5" />
-              </Button>
+              <a href="#pricing">
+                <Button size="lg" variant="outline" className="gap-2 text-base border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
+                  Ver Planos
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </a>
             </div>
           </div>
         </div>
@@ -432,7 +612,7 @@ export function LandingPage() {
               <a href="#" className="hover:text-foreground transition-colors">Suporte</a>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 ShowCRM. Todos os direitos reservados.
+              © 2026 ShowCRM. Todos os direitos reservados.
             </p>
           </div>
         </div>

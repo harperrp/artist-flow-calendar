@@ -109,7 +109,7 @@ export function ContractDialog({ open, onOpenChange, initialData, leads, onResul
               </SelectTrigger>
               <SelectContent>
                 {leads.length === 0 ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="__none__" disabled>
                     Nenhum lead disponível
                   </SelectItem>
                 ) : (
