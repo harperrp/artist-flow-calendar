@@ -457,7 +457,9 @@ export type Database = {
       lead_messages: {
         Row: {
           created_at: string
+          delivered_at: string | null
           direction: string
+          error_message: string | null
           id: string
           lead_id: string
           media_url: string | null
@@ -465,11 +467,17 @@ export type Database = {
           message_type: string
           organization_id: string
           raw_payload: Json | null
+          read_at: string | null
+          sent_at: string | null
+          status: string
+          template_id: string | null
           wa_id: string | null
         }
         Insert: {
           created_at?: string
+          delivered_at?: string | null
           direction?: string
+          error_message?: string | null
           id?: string
           lead_id: string
           media_url?: string | null
@@ -477,11 +485,17 @@ export type Database = {
           message_type?: string
           organization_id: string
           raw_payload?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
           wa_id?: string | null
         }
         Update: {
           created_at?: string
+          delivered_at?: string | null
           direction?: string
+          error_message?: string | null
           id?: string
           lead_id?: string
           media_url?: string | null
@@ -489,6 +503,10 @@ export type Database = {
           message_type?: string
           organization_id?: string
           raw_payload?: Json | null
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
           wa_id?: string | null
         }
         Relationships: [
@@ -504,6 +522,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -522,16 +547,21 @@ export type Database = {
           event_name: string | null
           fee: number | null
           id: string
+          last_contact_at: string | null
+          last_message: string | null
           latitude: number | null
           longitude: number | null
           neighborhood: string | null
           notes: string | null
           organization_id: string
           origin: string | null
+          region: string | null
           stage: Database["public"]["Enums"]["funnel_stage"]
           state: string | null
+          status_comercial: string | null
           street: string | null
           street_number: string | null
+          unread_count: number
           updated_at: string
           venue_id: string | null
           venue_name: string | null
@@ -550,16 +580,21 @@ export type Database = {
           event_name?: string | null
           fee?: number | null
           id?: string
+          last_contact_at?: string | null
+          last_message?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string | null
           notes?: string | null
           organization_id: string
           origin?: string | null
+          region?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
+          status_comercial?: string | null
           street?: string | null
           street_number?: string | null
+          unread_count?: number
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
@@ -578,16 +613,21 @@ export type Database = {
           event_name?: string | null
           fee?: number | null
           id?: string
+          last_contact_at?: string | null
+          last_message?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string | null
           notes?: string | null
           organization_id?: string
           origin?: string | null
+          region?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
+          status_comercial?: string | null
           street?: string | null
           street_number?: string | null
+          unread_count?: number
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
@@ -613,6 +653,128 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_interactions: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          lead_id: string
+          organization_id: string
+          payload: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          lead_id: string
+          organization_id: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          lead_id?: string
+          organization_id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          message_id: string | null
+          next_retry_at: string | null
+          organization_id: string
+          payload: Json
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          next_retry_at?: string | null
+          organization_id: string
+          payload: Json
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          next_retry_at?: string | null
+          organization_id?: string
+          payload?: Json
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_queue_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lead_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1362,6 +1524,243 @@ export type Database = {
           },
         ]
       }
+      whatsapp_conversations: {
+        Row: {
+          city: string | null
+          contact_name: string | null
+          contact_phone: string
+          created_at: string
+          created_by: string | null
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          lead_id: string | null
+          organization_id: string
+          region: string | null
+          stage: string | null
+          status: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          contact_name?: string | null
+          contact_phone: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          lead_id?: string | null
+          organization_id: string
+          region?: string | null
+          stage?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          lead_id?: string | null
+          organization_id?: string
+          region?: string | null
+          stage?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_followups: {
+        Row: {
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          due_at: string
+          id: string
+          lead_id: string
+          notes: string | null
+          organization_id: string
+          scheduled_by: string
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          due_at: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          organization_id: string
+          scheduled_by: string
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          due_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          organization_id?: string
+          scheduled_by?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_followups_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_followups_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_followups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_followups_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+          phone_number_id: string | null
+          provider: string
+          qr_code: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          phone_number_id?: string | null
+          provider?: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          phone_number_id?: string | null
+          provider?: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+          variables: string[]
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+          variables?: string[]
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          variables?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       lead_financial_summary: {
@@ -1421,6 +1820,10 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       mark_overdue_installments: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
+      mark_overdue_whatsapp_followups: {
         Args: { _org_id: string }
         Returns: undefined
       }
