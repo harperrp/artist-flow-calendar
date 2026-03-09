@@ -11,6 +11,7 @@ import { Calendar, Clock, Plus, Send } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LeadFinancialSummary } from "@/components/finance/LeadFinancialSummary";
+import { LeadMessagesThread } from "@/components/leads/LeadMessagesThread";
 import { useOrg } from "@/providers/OrgProvider";
 import {
   useCreateLeadInteraction,
@@ -96,12 +97,17 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
         </div>
       </div>
 
-      <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-3 grid grid-cols-3 w-auto">
+      <Tabs defaultValue="whatsapp" className="flex-1 flex flex-col">
+        <TabsList className="mx-4 mt-3 grid grid-cols-4 w-auto">
+          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
           <TabsTrigger value="notes">Observações</TabsTrigger>
           <TabsTrigger value="followup">Follow-up</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="whatsapp" className="m-0 flex-1">
+          <LeadMessagesThread leadId={lead.id} />
+        </TabsContent>
 
         <TabsContent value="timeline" className="m-0 flex-1">
           <ScrollArea className="h-[380px] p-4">
