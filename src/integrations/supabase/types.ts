@@ -454,6 +454,51 @@ export type Database = {
           },
         ]
       }
+      lead_interactions: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          lead_id: string
+          organization_id: string
+          payload: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          lead_id: string
+          organization_id: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          lead_id?: string
+          organization_id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_messages: {
         Row: {
           created_at: string
@@ -467,9 +512,8 @@ export type Database = {
           message_type: string
           organization_id: string
           raw_payload: Json | null
-          read_at: string | null
           sent_at: string | null
-          status: string
+          status: string | null
           template_id: string | null
           wa_id: string | null
         }
@@ -485,9 +529,8 @@ export type Database = {
           message_type?: string
           organization_id: string
           raw_payload?: Json | null
-          read_at?: string | null
           sent_at?: string | null
-          status?: string
+          status?: string | null
           template_id?: string | null
           wa_id?: string | null
         }
@@ -503,9 +546,8 @@ export type Database = {
           message_type?: string
           organization_id?: string
           raw_payload?: Json | null
-          read_at?: string | null
           sent_at?: string | null
-          status?: string
+          status?: string | null
           template_id?: string | null
           wa_id?: string | null
         }
@@ -522,13 +564,6 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lead_messages_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -549,6 +584,8 @@ export type Database = {
           id: string
           last_contact_at: string | null
           last_message: string | null
+          last_message_at: string | null
+          last_message_preview: string | null
           latitude: number | null
           longitude: number | null
           neighborhood: string | null
@@ -556,15 +593,16 @@ export type Database = {
           organization_id: string
           origin: string | null
           region: string | null
+          source: string | null
           stage: Database["public"]["Enums"]["funnel_stage"]
           state: string | null
-          status_comercial: string | null
           street: string | null
           street_number: string | null
-          unread_count: number
+          unread_count: number | null
           updated_at: string
           venue_id: string | null
           venue_name: string | null
+          whatsapp_phone: string | null
           zip_code: string | null
         }
         Insert: {
@@ -582,6 +620,8 @@ export type Database = {
           id?: string
           last_contact_at?: string | null
           last_message?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string | null
@@ -589,15 +629,16 @@ export type Database = {
           organization_id: string
           origin?: string | null
           region?: string | null
+          source?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
-          status_comercial?: string | null
           street?: string | null
           street_number?: string | null
-          unread_count?: number
+          unread_count?: number | null
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
+          whatsapp_phone?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -615,6 +656,8 @@ export type Database = {
           id?: string
           last_contact_at?: string | null
           last_message?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood?: string | null
@@ -622,15 +665,16 @@ export type Database = {
           organization_id?: string
           origin?: string | null
           region?: string | null
+          source?: string | null
           stage?: Database["public"]["Enums"]["funnel_stage"]
           state?: string | null
-          status_comercial?: string | null
           street?: string | null
           street_number?: string | null
-          unread_count?: number
+          unread_count?: number | null
           updated_at?: string
           venue_id?: string | null
           venue_name?: string | null
+          whatsapp_phone?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -653,128 +697,6 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lead_interactions: {
-        Row: {
-          conversation_id: string | null
-          created_at: string
-          event_type: string
-          id: string
-          lead_id: string
-          organization_id: string
-          payload: Json | null
-          user_id: string | null
-        }
-        Insert: {
-          conversation_id?: string | null
-          created_at?: string
-          event_type: string
-          id?: string
-          lead_id: string
-          organization_id: string
-          payload?: Json | null
-          user_id?: string | null
-        }
-        Update: {
-          conversation_id?: string | null
-          created_at?: string
-          event_type?: string
-          id?: string
-          lead_id?: string
-          organization_id?: string
-          payload?: Json | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lead_interactions_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lead_interactions_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lead_interactions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      message_queue: {
-        Row: {
-          attempts: number
-          created_at: string
-          id: string
-          last_error: string | null
-          lead_id: string | null
-          message_id: string | null
-          next_retry_at: string | null
-          organization_id: string
-          payload: Json
-          provider: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          attempts?: number
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          lead_id?: string | null
-          message_id?: string | null
-          next_retry_at?: string | null
-          organization_id: string
-          payload: Json
-          provider?: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          attempts?: number
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          lead_id?: string | null
-          message_id?: string | null
-          next_retry_at?: string | null
-          organization_id?: string
-          payload?: Json
-          provider?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_queue_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_queue_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "lead_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_queue_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -804,6 +726,60 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_queue: {
+        Row: {
+          attempts: number | null
+          created_at: string
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          message_id: string | null
+          organization_id: string
+          payload: Json | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          organization_id: string
+          payload?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          organization_id?: string
+          payload?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_queue_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_queue_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1530,7 +1506,6 @@ export type Database = {
           contact_name: string | null
           contact_phone: string
           created_at: string
-          created_by: string | null
           id: string
           last_message: string | null
           last_message_at: string | null
@@ -1538,8 +1513,7 @@ export type Database = {
           organization_id: string
           region: string | null
           stage: string | null
-          status: string
-          unread_count: number
+          status: string | null
           updated_at: string
         }
         Insert: {
@@ -1547,7 +1521,6 @@ export type Database = {
           contact_name?: string | null
           contact_phone: string
           created_at?: string
-          created_by?: string | null
           id?: string
           last_message?: string | null
           last_message_at?: string | null
@@ -1555,8 +1528,7 @@ export type Database = {
           organization_id: string
           region?: string | null
           stage?: string | null
-          status?: string
-          unread_count?: number
+          status?: string | null
           updated_at?: string
         }
         Update: {
@@ -1564,7 +1536,6 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string
           created_at?: string
-          created_by?: string | null
           id?: string
           last_message?: string | null
           last_message_at?: string | null
@@ -1572,8 +1543,7 @@ export type Database = {
           organization_id?: string
           region?: string | null
           stage?: string | null
-          status?: string
-          unread_count?: number
+          status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1596,57 +1566,44 @@ export type Database = {
       whatsapp_followups: {
         Row: {
           completed_at: string | null
-          conversation_id: string | null
           created_at: string
           due_at: string
           id: string
           lead_id: string
-          notes: string | null
           organization_id: string
-          scheduled_by: string
-          status: string
+          scheduled_by: string | null
+          status: string | null
           template_id: string | null
-          title: string
+          title: string | null
           updated_at: string
         }
         Insert: {
           completed_at?: string | null
-          conversation_id?: string | null
           created_at?: string
           due_at: string
           id?: string
           lead_id: string
-          notes?: string | null
           organization_id: string
-          scheduled_by: string
-          status?: string
+          scheduled_by?: string | null
+          status?: string | null
           template_id?: string | null
-          title: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
           completed_at?: string | null
-          conversation_id?: string | null
           created_at?: string
           due_at?: string
           id?: string
           lead_id?: string
-          notes?: string | null
           organization_id?: string
-          scheduled_by?: string
-          status?: string
+          scheduled_by?: string | null
+          status?: string | null
           template_id?: string | null
-          title?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "whatsapp_followups_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_conversations"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "whatsapp_followups_lead_id_fkey"
             columns: ["lead_id"]
@@ -1661,95 +1618,44 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "whatsapp_followups_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      whatsapp_sessions: {
-        Row: {
-          created_at: string
-          id: string
-          metadata: Json | null
-          organization_id: string
-          phone_number_id: string | null
-          provider: string
-          qr_code: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          organization_id: string
-          phone_number_id?: string | null
-          provider?: string
-          qr_code?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          organization_id?: string
-          phone_number_id?: string | null
-          provider?: string
-          qr_code?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_sessions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
         ]
       }
       whatsapp_templates: {
         Row: {
           body: string
-          category: string
+          category: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
-          is_active: boolean
+          is_active: boolean | null
           name: string
           organization_id: string
           updated_at: string
-          variables: string[]
+          variables: string[] | null
         }
         Insert: {
           body: string
-          category: string
+          category?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           name: string
           organization_id: string
           updated_at?: string
-          variables?: string[]
+          variables?: string[] | null
         }
         Update: {
           body?: string
-          category?: string
+          category?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           name?: string
           organization_id?: string
           updated_at?: string
-          variables?: string[]
+          variables?: string[] | null
         }
         Relationships: [
           {
@@ -1823,8 +1729,16 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
-      mark_overdue_whatsapp_followups: {
-        Args: { _org_id: string }
+      register_whatsapp_inbound: {
+        Args: {
+          _contact_name: string
+          _contact_phone: string
+          _lead_id: string
+          _message_at: string
+          _message_text: string
+          _org_id: string
+          _stage: string
+        }
         Returns: undefined
       }
     }
