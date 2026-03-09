@@ -7,18 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Calendar, Clock, MessageCircle, MessageSquare, Plus, Send } from "lucide-react";
+import { Calendar, Clock, Plus, Send } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LeadMessagesThread } from "./LeadMessagesThread";
 import { LeadFinancialSummary } from "@/components/finance/LeadFinancialSummary";
 import { useOrg } from "@/providers/OrgProvider";
 import {
   useCreateLeadInteraction,
-  useCreateWhatsAppFollowup,
+  useCreateLeadFollowup,
   useLeadInteractions,
-  useWhatsAppFollowups,
-} from "@/hooks/useWhatsAppQueries";
+  useLeadFollowups,
+} from "@/hooks/useLeadEngagementQueries";
 import { toast } from "sonner";
 
 interface LeadDetailPanelProps {
@@ -34,9 +33,9 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
   const [followupDate, setFollowupDate] = useState("");
 
   const { data: interactions = [], isLoading: interactionsLoading } = useLeadInteractions(activeOrgId, lead?.id);
-  const { data: followups = [], isLoading: followupsLoading } = useWhatsAppFollowups(activeOrgId, lead?.id);
+  const { data: followups = [], isLoading: followupsLoading } = useLeadFollowups(activeOrgId, lead?.id);
   const createInteraction = useCreateLeadInteraction(activeOrgId);
-  const createFollowup = useCreateWhatsAppFollowup(activeOrgId);
+  const createFollowup = useCreateLeadFollowup(activeOrgId);
 
   const notes = useMemo(
     () => interactions.filter((entry: any) => entry.event_type === "note"),
@@ -98,9 +97,8 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
       </div>
 
       <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-3 grid grid-cols-4 w-auto">
+        <TabsList className="mx-4 mt-3 grid grid-cols-3 w-auto">
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
-          <TabsTrigger value="whatsapp" className="gap-1"><MessageCircle className="h-3 w-3" /> Mensagens</TabsTrigger>
           <TabsTrigger value="notes">Observações</TabsTrigger>
           <TabsTrigger value="followup">Follow-up</TabsTrigger>
         </TabsList>
@@ -125,10 +123,6 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
               )}
             </div>
           </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="whatsapp" className="m-0 flex-1">
-          <LeadMessagesThread leadId={lead.id} />
         </TabsContent>
 
         <TabsContent value="notes" className="m-0 flex-1 flex flex-col">
