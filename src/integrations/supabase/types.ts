@@ -1836,6 +1836,18 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      register_whatsapp_inbound: {
+        Args: {
+          _contact_name: string
+          _contact_phone: string
+          _lead_id: string
+          _message_at: string
+          _message_text: string
+          _org_id: string
+          _stage: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       activity_action:
