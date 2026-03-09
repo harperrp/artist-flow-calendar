@@ -23,11 +23,11 @@ import {
 
 function applyTemplate(body: string, lead: any) {
   return body
-    .replaceAll("{{nome}}", lead?.contractor_name || "")
-    .replaceAll("{{cidade}}", lead?.city || "")
-    .replaceAll("{{regiao}}", lead?.region || lead?.state || "")
-    .replaceAll("{{data_show}}", lead?.event_date || "")
-    .replaceAll("{{valor}}", lead?.fee ? String(lead.fee) : "");
+    .replace(/\{\{nome\}\}/g, lead?.contractor_name || "")
+    .replace(/\{\{cidade\}\}/g, lead?.city || "")
+    .replace(/\{\{regiao\}\}/g, lead?.region || lead?.state || "")
+    .replace(/\{\{data_show\}\}/g, lead?.event_date || "")
+    .replace(/\{\{valor\}\}/g, lead?.fee ? String(lead.fee) : "");
 }
 
 export function WhatsAppInboxPage() {

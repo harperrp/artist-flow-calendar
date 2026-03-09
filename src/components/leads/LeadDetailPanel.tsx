@@ -174,7 +174,7 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
               ))}
             </div>
           )}
-          <LeadFinancialSummary leadId={lead.id} />
+          <LeadFinancialSummary lead={lead} orgId={activeOrgId || ""} />
         </TabsContent>
       </Tabs>
     </Card>
