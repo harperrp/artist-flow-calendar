@@ -33,7 +33,7 @@ export function LeadMessagesThread({ leadId }: LeadMessagesThreadProps) {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "lead_messages",
           filter: `lead_id=eq.${leadId}`,
@@ -88,7 +88,7 @@ export function LeadMessagesThread({ leadId }: LeadMessagesThreadProps) {
                 <div className="flex items-center gap-1 mb-1">
                   <Icon className="h-3 w-3" />
                   <Badge variant="outline" className="text-[10px] px-1 py-0">
-                    {msg.message_type}
+                    {msg.status ? `${msg.message_type} • ${msg.status}` : msg.message_type}
                   </Badge>
                 </div>
                 <p className="whitespace-pre-wrap break-words">{msg.message_text}</p>

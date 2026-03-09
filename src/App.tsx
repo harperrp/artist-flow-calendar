@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ArtistDashboardPage } from "@/pages/ArtistDashboard";
 import { SuperAdminPage } from "@/pages/SuperAdmin";
+import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
 
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                   <Route path="artist" element={<ArtistDashboardPage />} />
                   <Route path="calendar" element={<ArtistCalendarPage />} />
                   <Route path="leads" element={<LeadsPage />} />
+                  <Route path="whatsapp" element={<WhatsAppInboxPage />} />
                   <Route path="contracts" element={<ContractsCrudPage />} />
                   <Route path="contacts" element={<ContactsPage />} />
                   

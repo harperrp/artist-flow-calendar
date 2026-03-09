@@ -9,6 +9,30 @@ function normalizePhone(phone: string) {
   return (phone || "").replace(/\D/g, "");
 }
 
+function toHex(buffer: ArrayBuffer) {
+  return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function signHmacSha256(secret: string, payload: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return toHex(signature);
+}
+
+function timingSafeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
+}
+
 function extractMessagePayload(msg: any) {
   let messageText = "";
   let messageType = msg?.type || "text";
@@ -70,13 +94,22 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const rawBody = await req.text();
+
     if (WEBHOOK_SECRET) {
-      const signature = req.headers.get("x-hub-signature-256") || "";
-      if (!signature) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
-      // Lightweight presence validation. Full HMAC validation can be enabled with raw-body flow when needed.
+      const signatureHeader = req.headers.get("x-hub-signature-256") || "";
+      if (!signatureHeader.startsWith("sha256=")) {
+        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      }
+
+      const expected = await signHmacSha256(WEBHOOK_SECRET, rawBody);
+      const provided = signatureHeader.slice("sha256=".length);
+      if (!timingSafeEqual(provided, expected)) {
+        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      }
     }
 
-    const body = await req.json();
+    const body = rawBody ? JSON.parse(rawBody) : {};
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     for (const entry of body?.entry ?? []) {
@@ -165,6 +198,9 @@ Deno.serve(async (req) => {
 
           if (!lead?.id) continue;
 
+          const now = new Date().toISOString();
+          const messagePreview = messageText || "[mídia]";
+
           await supabase.from("lead_messages").insert({
             organization_id: org.id,
             lead_id: lead.id,
@@ -174,17 +210,26 @@ Deno.serve(async (req) => {
             media_url: mediaUrl,
             wa_id: waId,
             raw_payload: msg,
+            status: "received",
+            delivered_at: now,
           });
 
-          await supabase
-            .from("leads")
-            .update({
-              last_message_at: new Date().toISOString(),
-              last_message_preview: messageText || "[mídia]",
-              whatsapp_phone: waId,
-              contact_phone: waId,
-            })
-            .eq("id", lead.id);
+          await supabase.from("lead_interactions").insert({
+            organization_id: org.id,
+            lead_id: lead.id,
+            event_type: "message_received",
+            payload: { text: messagePreview, type: messageType },
+          });
+
+          await supabase.rpc("register_whatsapp_inbound", {
+            _org_id: org.id,
+            _lead_id: lead.id,
+            _contact_phone: waId,
+            _contact_name: name,
+            _stage: firstStage?.name ?? "Negociação",
+            _message_text: messagePreview,
+            _message_at: now,
+          });
         }
       }
     }
