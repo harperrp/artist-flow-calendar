@@ -174,12 +174,22 @@ export function LeadsPage() {
   async function sendWhatsAppMessage() {
     if (!selectedLeadId || !waText.trim()) return;
 
+    if (!selectedLead?.contact_phone) {
+      toast.error("Este lead não possui telefone cadastrado", {
+        description: "Adicione um telefone para enviar mensagens pelo WhatsApp.",
+      });
+      return;
+    }
+
     const { error } = await supabase.functions.invoke("wa-send-message", {
       body: { lead_id: selectedLeadId, text: waText.trim() },
     });
 
     if (error) {
-      toast.error("Falha ao enviar mensagem", { description: error.message });
+      const message = error.message?.includes("telefone")
+        ? "Este lead não possui telefone cadastrado"
+        : "Falha ao enviar mensagem";
+      toast.error(message, { description: error.message });
       return;
     }
 
@@ -374,7 +384,7 @@ export function LeadsPage() {
                         placeholder="Enviar mensagem WhatsApp..."
                         onKeyDown={(e) => e.key === "Enter" && sendWhatsAppMessage()}
                       />
-                      <Button onClick={sendWhatsAppMessage} className="gap-2" disabled={!waText.trim()}>
+                      <Button onClick={sendWhatsAppMessage} className="gap-2" disabled={!waText.trim() || !selectedLead?.contact_phone}>
                         <Send className="h-4 w-4" /> Enviar
                       </Button>
                     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,9 @@ function applyTemplate(body: string, lead: any) {
 }
 
 export function WhatsAppInboxPage() {
+  return <Navigate to="/app/leads" replace />;
+
+
   const { activeOrgId } = useOrg();
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
