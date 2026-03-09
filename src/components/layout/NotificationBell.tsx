@@ -7,27 +7,79 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Bell, ListChecks, Clock } from "lucide-react";
+import { Bell, Calendar, FileText, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  useNotifications,
-  useMarkNotificationRead,
-  useMarkAllRead,
-} from "@/hooks/useNotifications";
 
-const typeIcons: Record<string, { icon: typeof Bell; color: string }> = {
-  task_assigned: { icon: ListChecks, color: "text-primary bg-primary/10" },
-  default: { icon: Bell, color: "text-muted-foreground bg-muted" },
+interface Notification {
+  id: string;
+  type: "show" | "contract" | "lead" | "alert";
+  title: string;
+  description: string;
+  createdAt: Date;
+  read: boolean;
+}
+
+// Mock notifications for demo
+const mockNotifications: Notification[] = [
+  {
+    id: "1",
+    type: "show",
+    title: "Show confirmado",
+    description: "Prefeitura de Januária confirmou o show para 15/03",
+    createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 min ago
+    read: false,
+  },
+  {
+    id: "2",
+    type: "contract",
+    title: "Contrato pendente",
+    description: "Contrato de Casa de Show BH aguarda assinatura",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+    read: false,
+  },
+  {
+    id: "3",
+    type: "lead",
+    title: "Novo lead recebido",
+    description: "Festival de Verão RJ entrou em contato",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5), // 5 hours ago
+    read: true,
+  },
+  {
+    id: "4",
+    type: "alert",
+    title: "Negociação parada",
+    description: "Lead Prefeitura de Uberlândia sem atualização há 7 dias",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+    read: true,
+  },
+];
+
+const iconMap = {
+  show: { icon: Calendar, color: "text-green-500 bg-green-50" },
+  contract: { icon: FileText, color: "text-blue-500 bg-blue-50" },
+  lead: { icon: CheckCircle, color: "text-yellow-500 bg-yellow-50" },
+  alert: { icon: AlertCircle, color: "text-red-500 bg-red-50" },
 };
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { data: notifications = [] } = useNotifications();
-  const markRead = useMarkNotificationRead();
-  const markAll = useMarkAllRead();
+  const [notifications, setNotifications] = useState(mockNotifications);
 
-  const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  function markAllRead() {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+  }
+
+  function markAsRead(id: string) {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -49,7 +101,7 @@ export function NotificationBell() {
               variant="ghost"
               size="sm"
               className="text-xs text-muted-foreground"
-              onClick={() => markAll.mutate()}
+              onClick={markAllRead}
             >
               Marcar todas como lidas
             </Button>
@@ -65,33 +117,34 @@ export function NotificationBell() {
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((n: any) => {
-                const config = typeIcons[n.type] ?? typeIcons.default;
-                const Icon = config.icon;
+              {notifications.map((notification) => {
+                const { icon: Icon, color } = iconMap[notification.type];
                 return (
                   <div
-                    key={n.id}
+                    key={notification.id}
                     className={`flex gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                      !n.is_read ? "bg-primary/5" : ""
+                      !notification.read ? "bg-primary/5" : ""
                     }`}
-                    onClick={() => !n.is_read && markRead.mutate(n.id)}
+                    onClick={() => markAsRead(notification.id)}
                   >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.color}`}>
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${color}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{n.title}</span>
-                        {!n.is_read && (
+                        <span className="font-medium text-sm truncate">
+                          {notification.title}
+                        </span>
+                        {!notification.read && (
                           <Badge variant="default" className="h-1.5 w-1.5 rounded-full p-0" />
                         )}
                       </div>
-                      {n.message && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
-                      )}
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {notification.description}
+                      </p>
                       <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(n.created_at), {
+                        {formatDistanceToNow(notification.createdAt, {
                           addSuffix: true,
                           locale: ptBR,
                         })}
@@ -103,6 +156,11 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        <div className="border-t p-2">
+          <Button variant="ghost" size="sm" className="w-full text-sm">
+            Ver todas as notificações
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

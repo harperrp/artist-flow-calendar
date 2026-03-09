@@ -1,11 +1,8 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrg } from "@/providers/OrgProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays,
@@ -17,13 +14,8 @@ import {
   DollarSign,
   Users,
   UsersRound,
-  UserCog,
-  ListChecks,
   Menu,
   X,
-  Music,
-  Crown,
-  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { QuickAddMenu } from "./QuickAddMenu";
@@ -64,32 +56,18 @@ function TopNavItem({
 export function AppShell() {
   const { user } = useAuth();
   const { profile } = useOrg();
-  const { role, roleLabel, canViewFinancialTotals, canManageLeads, isArtista } = useUserRole();
-  const { isSuperAdmin } = useSuperAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const allNavItems = [
-    { to: "/app/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/artist", icon: Music, label: "Painel Artista", roles: ["artista", "admin"] },
-    { to: "/app/calendar", icon: CalendarDays, label: "Agenda", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/leads", icon: Handshake, label: "Leads", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/whatsapp", icon: MessageCircle, label: "WhatsApp", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/contracts", icon: FileText, label: "Contratos", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/contacts", icon: Users, label: "Contatos", roles: ["admin", "comercial", "financeiro"] },
-    
-    { to: "/app/tasks", icon: ListChecks, label: "Tarefas", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/team", icon: UsersRound, label: "Equipe", roles: ["admin"] },
-    { to: "/app/users", icon: UserCog, label: "Usuários", roles: ["admin"] },
-    { to: "/app/map", icon: Map, label: "Mapa", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/financial", icon: DollarSign, label: "Financeiro", roles: ["admin", "financeiro"] },
+  const navItems = [
+    { to: "/app/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/app/calendar", icon: CalendarDays, label: "Agenda" },
+    { to: "/app/leads", icon: Handshake, label: "Leads" },
+    { to: "/app/contracts", icon: FileText, label: "Contratos" },
+    { to: "/app/contacts", icon: Users, label: "Contatos" },
+    { to: "/app/team", icon: UsersRound, label: "Equipe" },
+    { to: "/app/map", icon: Map, label: "Mapa" },
+    { to: "/app/financial", icon: DollarSign, label: "Financeiro" },
   ];
-
-  const navItems = allNavItems.filter((item) => item.roles.includes(role));
-
-  // Add super admin link if user is super admin
-  if (isSuperAdmin) {
-    navItems.push({ to: "/app/admin", icon: Crown, label: "Super Admin", roles: ["admin"] });
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,12 +80,7 @@ export function AppShell() {
               RL
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-semibold tracking-tight flex items-center gap-2">
-                CRM Rodrigo Lopes
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  {roleLabel}
-                </Badge>
-              </div>
+              <div className="text-sm font-semibold tracking-tight">CRM Rodrigo Lopes</div>
               <div className="truncate text-xs text-muted-foreground">
                 {profile?.display_name ?? profile?.email ?? user?.email ?? ""}
               </div>
@@ -124,7 +97,7 @@ export function AppShell() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <GlobalSearch />
-            {canManageLeads && <QuickAddMenu />}
+            <QuickAddMenu />
             <NotificationBell />
             <ThemeToggle />
             <Button

@@ -142,7 +142,7 @@ export function ArtistCalendarPage() {
     try {
       const { error } = await db.from("calendar_events").update({ start_time: nextStart }).eq("id", id);
       if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
       if (selected?.id === id) setSelected((s) => (s ? { ...s, start: nextStart } : s));
     } catch (e: any) {
       toast("Não foi possível mover o evento", { description: e?.message ?? "" });
@@ -188,7 +188,7 @@ export function ArtistCalendarPage() {
         toast("Não foi possível salvar", { description: error.message });
         return;
       }
-      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
       setSelected(result.event);
       return;
     }
@@ -199,7 +199,7 @@ export function ArtistCalendarPage() {
         toast("Não foi possível remover", { description: error.message });
         return;
       }
-      await qc.invalidateQueries({ queryKey: ["events", activeOrgId] });
+      await qc.invalidateQueries({ queryKey: ["calendar_events", activeOrgId] });
       setSelected((s) => (s?.id === result.id ? null : s));
     }
   }
