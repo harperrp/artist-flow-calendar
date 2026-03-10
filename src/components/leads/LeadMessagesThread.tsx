@@ -88,11 +88,11 @@ export function LeadMessagesThread({ leadId }: LeadMessagesThreadProps) {
                 <div className="flex items-center gap-1 mb-1">
                   <Icon className="h-3 w-3" />
                   <Badge variant="outline" className="text-[10px] px-1 py-0">
-                    {msg.status ? `${msg.message_type} • ${msg.status}` : msg.message_type}
+                    {msg.message_type}
                   </Badge>
                 </div>
                 <p className="whitespace-pre-wrap break-words">{msg.message_text}</p>
-                <div className="text-[10px] opacity-60 mt-1 text-right">
+                <div className={`text-[10px] opacity-60 mt-1 ${isInbound ? "text-left" : "text-right"}`}>
                   {format(parseISO(msg.created_at), "dd/MM HH:mm", { locale: ptBR })}
                 </div>
               </div>

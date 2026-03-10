@@ -98,10 +98,11 @@ export function useLeadMessages(leadId: string | null) {
   return useQuery({
     queryKey: ["lead_messages", leadId],
     enabled: !!leadId,
+    refetchInterval: leadId ? 5000 : false,
     queryFn: async () => {
       const { data, error } = await db
         .from("lead_messages")
-        .select("*")
+        .select("id, lead_id, direction, message_text, message_type, created_at")
         .eq("lead_id", leadId)
         .order("created_at", { ascending: true });
       if (error) throw error;
