@@ -71,3 +71,25 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+
+## Supabase (projeto único)
+
+Este repositório está travado para usar **apenas** o projeto Supabase abaixo:
+
+- Project ref: `uhumbtpkioisepqiqotl`
+- URL: `https://uhumbtpkioisepqiqotl.supabase.co`
+
+### Variáveis obrigatórias
+Frontend (`.env`):
+
+- `VITE_SUPABASE_URL=https://uhumbtpkioisepqiqotl.supabase.co`
+- `VITE_SUPABASE_PUBLISHABLE_KEY=<publishable key do projeto acima>`
+
+Edge Functions (secrets Supabase):
+
+- `SUPABASE_URL=https://uhumbtpkioisepqiqotl.supabase.co`
+- `SUPABASE_ANON_KEY=<anon key do projeto acima>`
+- `SUPABASE_SERVICE_ROLE_KEY=<service_role key do projeto acima>`
+
+> Observação: o frontend e as edge functions possuem validações de segurança para falhar caso um binding de outro projeto seja configurado por engano.

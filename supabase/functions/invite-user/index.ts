@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const EXPECTED_SUPABASE_URL = "https://uhumbtpkioisepqiqotl.supabase.co";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -15,6 +17,7 @@ Deno.serve(async (req) => {
     if (!authHeader) throw new Error("Missing authorization");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    if (supabaseUrl !== EXPECTED_SUPABASE_URL) throw new Error(`SUPABASE_URL inválida: ${supabaseUrl}`);
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Verify the caller is authenticated

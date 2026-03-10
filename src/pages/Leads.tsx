@@ -122,6 +122,11 @@ export function LeadsPage() {
 
   const totalPipeline = useMemo(() => leads.reduce((sum: number, l: any) => sum + (l.fee || 0), 0), [leads]);
 
+  function hasValidPhone(phone?: string | null) {
+    const digits = (phone || "").replace(/\D/g, "");
+    return digits.length >= 10;
+  }
+
   async function handleDialogResult(data: any) {
     if (!activeOrgId || !data) return;
     const user = (await supabase.auth.getUser()).data.user;
@@ -174,9 +179,9 @@ export function LeadsPage() {
   async function sendWhatsAppMessage() {
     if (!selectedLeadId || !waText.trim()) return;
 
-    if (!selectedLead?.contact_phone) {
+    if (!hasValidPhone(selectedLead?.contact_phone)) {
       toast.error("Este lead não possui telefone cadastrado", {
-        description: "Adicione um telefone para enviar mensagens pelo WhatsApp.",
+        description: "Adicione um telefone válido para enviar mensagens pelo WhatsApp.",
       });
       return;
     }
