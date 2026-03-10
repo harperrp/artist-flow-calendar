@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -30,10 +30,12 @@ function applyTemplate(body: string, lead: any) {
     .replace(/\{\{valor\}\}/g, lead?.fee ? String(lead.fee) : "");
 }
 
+function hasValidPhone(phone?: string | null) {
+  const digits = (phone || "").replace(/\D/g, "");
+  return digits.length >= 10;
+}
+
 export function WhatsAppInboxPage() {
-  return <Navigate to="/app/leads" replace />;
-
-
   const { activeOrgId } = useOrg();
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -59,7 +61,10 @@ export function WhatsAppInboxPage() {
     },
   });
 
-  const selected = useMemo(() => conversations.find((c: any) => c.id === selectedLeadId), [conversations, selectedLeadId]);
+  const selected = useMemo(
+    () => conversations.find((c: any) => c.id === selectedLeadId),
+    [conversations, selectedLeadId]
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -106,6 +111,10 @@ export function WhatsAppInboxPage() {
   const sendMessageMutation = useMutation({
     mutationFn: async () => {
       if (!selectedLeadId || !text.trim()) return;
+      if (!hasValidPhone(selected?.contact_phone)) {
+        throw new Error("Este lead não possui telefone válido para WhatsApp.");
+      }
+
       const { error } = await supabase.functions.invoke("wa-send-message", {
         body: { lead_id: selectedLeadId, text: text.trim() },
       });
@@ -121,6 +130,7 @@ export function WhatsAppInboxPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
       qc.invalidateQueries({ queryKey: ["whatsapp_conversations", activeOrgId] });
+      toast.success("Mensagem enviada");
     },
     onError: (error: any) => {
       toast.error("Falha ao enviar mensagem", { description: error.message });
@@ -232,7 +242,7 @@ export function WhatsAppInboxPage() {
             </div>
             <div className="flex gap-2">
               <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite sua resposta..." onKeyDown={(e) => e.key === "Enter" && sendMessageMutation.mutate()} />
-              <Button onClick={() => sendMessageMutation.mutate()} disabled={sendMessageMutation.isPending}>Enviar</Button>
+              <Button onClick={() => sendMessageMutation.mutate()} disabled={sendMessageMutation.isPending || !text.trim() || !hasValidPhone(selected?.contact_phone)}>Enviar</Button>
             </div>
           </div>
         </Card>

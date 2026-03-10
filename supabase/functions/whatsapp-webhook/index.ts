@@ -9,6 +9,12 @@ function normalizePhone(phone: string) {
   return (phone || "").replace(/\D/g, "");
 }
 
+function maskPhone(phone: string) {
+  if (!phone) return "";
+  if (phone.length <= 4) return "****";
+  return `${"*".repeat(Math.max(0, phone.length - 4))}${phone.slice(-4)}`;
+}
+
 function toHex(buffer: ArrayBuffer) {
   return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -25,6 +31,8 @@ async function signHmacSha256(secret: string, payload: string) {
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   return toHex(signature);
 }
+
+const EXPECTED_SUPABASE_URL = "https://uhumbtpkioisepqiqotl.supabase.co";
 
 function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
@@ -73,6 +81,9 @@ Deno.serve(async (req) => {
   const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "";
   const WEBHOOK_SECRET = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  if (SUPABASE_URL !== EXPECTED_SUPABASE_URL) {
+    return new Response("Invalid Supabase binding", { status: 500, headers: corsHeaders });
+  }
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const DEFAULT_ORG_ID = Deno.env.get("WHATSAPP_DEFAULT_ORGANIZATION_ID") ?? "";
   const PHONE_MAP = JSON.parse(Deno.env.get("WHATSAPP_PHONE_NUMBER_MAP") ?? "{}");
@@ -119,7 +130,10 @@ Deno.serve(async (req) => {
         const value = change?.value;
         const phoneNumberId = value?.metadata?.phone_number_id;
         const orgId = PHONE_MAP[phoneNumberId] ?? DEFAULT_ORG_ID;
-        if (!orgId) continue;
+        if (!orgId) {
+          console.warn("[whatsapp-webhook] org not mapped", { phone_number_id: phoneNumberId ?? null });
+          continue;
+        }
 
         const { data: org } = await supabase
           .from("organizations")
@@ -142,6 +156,14 @@ Deno.serve(async (req) => {
         for (const msg of messages) {
           const waId = normalizePhone(msg?.from ?? "");
           if (!waId) continue;
+
+          console.log("[whatsapp-webhook] inbound message", {
+            org_id: org.id,
+            phone_number_id: phoneNumberId ?? null,
+            from_masked: maskPhone(waId),
+            message_type: msg?.type ?? "unknown",
+            message_id: msg?.id ?? null,
+          });
 
           const matchedContact = contacts.find((c: any) => normalizePhone(c?.wa_id) === waId);
           const name = matchedContact?.profile?.name ?? "Lead WhatsApp";
@@ -229,6 +251,12 @@ Deno.serve(async (req) => {
             _stage: firstStage?.name ?? "Negociação",
             _message_text: messagePreview,
             _message_at: now,
+          });
+
+          console.log("[whatsapp-webhook] inbound persisted", {
+            org_id: org.id,
+            lead_id: lead.id,
+            from_masked: maskPhone(waId),
           });
         }
       }
