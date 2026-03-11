@@ -12,6 +12,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LeadFinancialSummary } from "@/components/finance/LeadFinancialSummary";
 import { LeadMessagesThread } from "@/components/leads/LeadMessagesThread";
+import { WhatsAppQRPanel } from "@/components/whatsapp/WhatsAppQRPanel";
 import { useOrg } from "@/providers/OrgProvider";
 import {
   useCreateLeadInteraction,
@@ -105,8 +106,29 @@ export function LeadDetailPanel({ lead }: LeadDetailPanelProps) {
           <TabsTrigger value="followup">Follow-up</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="whatsapp" className="m-0 flex-1">
-          <LeadMessagesThread leadId={lead.id} />
+        <TabsContent value="whatsapp" className="m-0 flex-1 min-h-0">
+          <Tabs defaultValue="cloud" className="h-full flex flex-col">
+            <TabsList className="mx-4 mt-3 grid grid-cols-2 w-auto">
+              <TabsTrigger value="cloud">WhatsApp Cloud</TabsTrigger>
+              <TabsTrigger value="vps">WhatsApp VPS</TabsTrigger>
+            </TabsList>
+            <TabsContent value="cloud" className="m-0 flex-1 min-h-0">
+              <LeadMessagesThread leadId={lead.id} />
+            </TabsContent>
+            <TabsContent value="vps" className="m-0 flex-1 overflow-auto">
+              <WhatsAppQRPanel
+                leadName={lead.contractor_name}
+                leadPhone={lead.contact_phone}
+                onMessageSent={async (content) => {
+                  await createInteraction.mutateAsync({
+                    lead_id: lead.id,
+                    event_type: "message_sent",
+                    payload: { content, channel: "whatsapp_vps" },
+                  });
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="timeline" className="m-0 flex-1">
