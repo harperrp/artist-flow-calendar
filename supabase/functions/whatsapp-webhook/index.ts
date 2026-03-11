@@ -15,6 +15,11 @@ function maskPhone(phone: string) {
   return `${"*".repeat(Math.max(0, phone.length - 4))}${phone.slice(-4)}`;
 }
 
+function isLikelyWhatsAppPhone(phone: string) {
+  const digits = normalizePhone(phone);
+  return digits.length >= 10 && digits.length <= 15;
+}
+
 function toHex(buffer: ArrayBuffer) {
   return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -155,7 +160,14 @@ Deno.serve(async (req) => {
 
         for (const msg of messages) {
           const waId = normalizePhone(msg?.from ?? "");
-          if (!waId) continue;
+          if (!waId || !isLikelyWhatsAppPhone(waId)) {
+            console.warn("[whatsapp-webhook] ignoring non-phone sender", {
+              org_id: org.id,
+              from_masked: maskPhone(waId),
+              raw_from: msg?.from ?? null,
+            });
+            continue;
+          }
 
           console.log("[whatsapp-webhook] inbound message", {
             org_id: org.id,
@@ -190,11 +202,19 @@ Deno.serve(async (req) => {
             contact = newContact;
           }
 
+          const leadOrFilters = [
+            `contact_phone.eq.${waId}`,
+            `whatsapp_phone.eq.${waId}`,
+          ];
+          if (contact?.id) {
+            leadOrFilters.unshift(`contact_id.eq.${contact.id}`);
+          }
+
           let { data: lead } = await supabase
             .from("leads")
-            .select("id")
+            .select("id, contractor_name")
             .eq("organization_id", org.id)
-            .eq("contact_id", contact?.id)
+            .or(leadOrFilters.join(","))
             .neq("stage", "Fechado")
             .order("updated_at", { ascending: false })
             .limit(1)
@@ -216,6 +236,14 @@ Deno.serve(async (req) => {
               .select("id")
               .single();
             lead = createdLead;
+          }
+
+          if (lead?.id && (lead.contractor_name === "Lead WhatsApp" || !lead.contractor_name?.trim()) && name !== "Lead WhatsApp") {
+            await supabase
+              .from("leads")
+              .update({ contractor_name: name, contact_phone: waId, whatsapp_phone: waId })
+              .eq("id", lead.id)
+              .eq("organization_id", org.id);
           }
 
           if (!lead?.id) continue;

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/providers/OrgProvider";
 import { db } from "@/lib/db";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import {
   useWhatsAppInteractionStats,
   useWhatsAppTemplates,
 } from "@/hooks/useWhatsAppQueries";
+import { WhatsAppQRPanel } from "@/components/whatsapp/WhatsAppQRPanel";
 
 function applyTemplate(body: string, lead: any) {
   return body
@@ -35,6 +37,14 @@ function hasValidPhone(phone?: string | null) {
   return digits.length >= 10;
 }
 
+function getLeadDisplayName(lead: any) {
+  const rawName = String(lead?.contractor_name || "").trim();
+  const normalizedPhone = String(lead?.contact_phone || lead?.whatsapp_phone || "").replace(/\D/g, "");
+  const looksGeneric = !rawName || /^lead\s*whatsapp$/i.test(rawName) || /^\d{10,}$/.test(rawName);
+  if (looksGeneric && normalizedPhone) return `Lead ${normalizedPhone}`;
+  return rawName || "Lead sem nome";
+}
+
 export function WhatsAppInboxPage() {
   const { activeOrgId } = useOrg();
   const qc = useQueryClient();
@@ -46,6 +56,7 @@ export function WhatsAppInboxPage() {
   const [newTemplateCategory, setNewTemplateCategory] = useState("apresentacao");
   const [newTemplateBody, setNewTemplateBody] = useState("");
   const [followupAt, setFollowupAt] = useState("");
+  const [activeChannelTab, setActiveChannelTab] = useState("vps");
 
   const { data: conversations = [] } = useQuery({
     queryKey: ["whatsapp_conversations", activeOrgId],
@@ -137,6 +148,18 @@ export function WhatsAppInboxPage() {
     },
   });
 
+  async function registerSentInteraction(content: string) {
+    if (!activeOrgId || !selectedLeadId) return;
+    await db.from("lead_interactions").insert({
+      organization_id: activeOrgId,
+      lead_id: selectedLeadId,
+      event_type: "message_sent",
+      payload: { content, channel: "whatsapp_vps" },
+    });
+    qc.invalidateQueries({ queryKey: ["whatsapp_conversations", activeOrgId] });
+    qc.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
+  }
+
   async function createTemplate() {
     if (!newTemplateName.trim() || !newTemplateBody.trim()) {
       toast.error("Preencha nome e conteúdo do template");
@@ -202,7 +225,7 @@ export function WhatsAppInboxPage() {
                   className={`w-full text-left p-3 rounded border transition ${selectedLeadId === lead.id ? "bg-primary/10 border-primary" : "hover:bg-muted"}`}
                 >
                   <div className="flex justify-between items-start gap-2">
-                    <div className="font-medium text-sm truncate">{lead.contractor_name}</div>
+                    <div className="font-medium text-sm truncate">{getLeadDisplayName(lead)}</div>
                     {lead.last_message_at && (
                       <div className="text-[11px] text-muted-foreground">
                         {formatDistanceToNow(new Date(lead.last_message_at), { addSuffix: true, locale: ptBR })}
@@ -221,30 +244,49 @@ export function WhatsAppInboxPage() {
         </Card>
 
         <Card className="flex flex-col overflow-hidden">
-          <div className="p-3 border-b font-semibold">{selected?.contractor_name ?? "Selecione uma conversa"}</div>
-          <div className="flex-1 min-h-0">{selectedLeadId ? <LeadMessagesThread leadId={selectedLeadId} /> : null}</div>
-          <div className="p-3 border-t space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-xs">Template:</Label>
-              <div className="flex flex-wrap gap-1">
-                {templates.slice(0, 4).map((template: any) => (
-                  <Button
-                    key={template.id}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setText(applyTemplate(template.body, selected))}
-                  >
-                    {template.name}
-                  </Button>
-                ))}
+          <div className="p-3 border-b font-semibold">{selected ? getLeadDisplayName(selected) : "Selecione uma conversa"}</div>
+          <Tabs value={activeChannelTab} onValueChange={setActiveChannelTab} className="flex-1 flex flex-col min-h-0">
+            <div className="px-3 pt-3 border-b">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="vps">WhatsApp VPS</TabsTrigger>
+                <TabsTrigger value="cloud">WhatsApp Cloud</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="cloud" className="m-0 flex-1 flex flex-col min-h-0">
+              <div className="flex-1 min-h-0">{selectedLeadId ? <LeadMessagesThread leadId={selectedLeadId} /> : null}</div>
+              <div className="p-3 border-t space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs">Template:</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {templates.slice(0, 4).map((template: any) => (
+                      <Button
+                        key={template.id}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setText(applyTemplate(template.body, selected))}
+                      >
+                        {template.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite sua resposta..." onKeyDown={(e) => e.key === "Enter" && sendMessageMutation.mutate()} />
+                  <Button onClick={() => sendMessageMutation.mutate()} disabled={sendMessageMutation.isPending || !text.trim() || !hasValidPhone(selected?.contact_phone)}>Enviar</Button>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite sua resposta..." onKeyDown={(e) => e.key === "Enter" && sendMessageMutation.mutate()} />
-              <Button onClick={() => sendMessageMutation.mutate()} disabled={sendMessageMutation.isPending || !text.trim() || !hasValidPhone(selected?.contact_phone)}>Enviar</Button>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="vps" className="m-0 flex-1 overflow-auto">
+              <WhatsAppQRPanel
+                leadName={selected ? getLeadDisplayName(selected) : undefined}
+                leadPhone={selected?.contact_phone}
+                onMessageSent={registerSentInteraction}
+              />
+            </TabsContent>
+          </Tabs>
         </Card>
 
         <Card className="overflow-hidden">
