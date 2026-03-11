@@ -7,6 +7,15 @@ const corsHeaders = {
 
 const EXPECTED_SUPABASE_URL = "https://uhumbtpkioisepqiqotl.supabase.co";
 
+class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function maskPhone(phone: string) {
   if (!phone) return "";
   if (phone.length <= 4) return "****";
@@ -37,13 +46,30 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!/^Bearer\s+.+/i.test(authHeader)) {
+      throw new HttpError(401, "Missing or invalid bearer token");
+    }
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     if (SUPABASE_URL !== EXPECTED_SUPABASE_URL) throw new Error(`SUPABASE_URL inválida: ${SUPABASE_URL}`);
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN")!;
     const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const {
+      data: { user: caller },
+      error: authError,
+    } = await userClient.auth.getUser();
+
+    if (authError || !caller) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
     const { lead_id, text, media_url, template_id, dry_run } = await req.json();
 
     if (dry_run === true) {
@@ -66,12 +92,37 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "lead_id and text/media_url are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: lead, error: leadErr } = await supabase
+    const { data: lead, error: leadErr } = await userClient
       .from("leads")
       .select("id, organization_id, contractor_name, contact_phone, city, region, stage")
       .eq("id", lead_id)
       .single();
-    if (leadErr || !lead) throw leadErr || new Error("Lead not found");
+    if (leadErr || !lead) throw leadErr || new HttpError(404, "Lead not found");
+
+    const { data: membership, error: membershipError } = await userClient
+      .from("memberships")
+      .select("role")
+      .eq("user_id", caller.id)
+      .eq("organization_id", lead.organization_id)
+      .in("role", ["member", "admin"])
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      console.warn("[wa-send-message] access denied", {
+        caller_id: caller.id,
+        lead_id,
+        organization_id: lead.organization_id,
+      });
+      throw new HttpError(403, "Forbidden");
+    }
+
+    console.log("[wa-send-message] authorized request", {
+      caller_id: caller.id,
+      lead_id: lead.id,
+      organization_id: lead.organization_id,
+    });
+
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     const phone = normalizeAndValidatePhone(lead.contact_phone || "");
     const to = phone.normalized;
@@ -83,8 +134,9 @@ Deno.serve(async (req) => {
     }
 
     console.log("[wa-send-message] outbound request", {
+      caller_id: caller.id,
       lead_id: lead.id,
-      org_id: lead.organization_id,
+      organization_id: lead.organization_id,
       to_masked: maskPhone(to),
       has_media: !!media_url,
       has_text: !!text,
@@ -146,8 +198,9 @@ Deno.serve(async (req) => {
     const waResponse = await response.json();
     if (!response.ok) {
       console.error("[wa-send-message] meta api error", {
+        caller_id: caller.id,
         lead_id: lead.id,
-        org_id: lead.organization_id,
+        organization_id: lead.organization_id,
         to_masked: maskPhone(to),
         status: response.status,
         status_text: response.statusText,
@@ -195,8 +248,9 @@ Deno.serve(async (req) => {
     }).eq("id", lead.id);
 
     console.log("[wa-send-message] outbound success", {
+      caller_id: caller.id,
       lead_id: lead.id,
-      org_id: lead.organization_id,
+      organization_id: lead.organization_id,
       to_masked: maskPhone(to),
       meta_messages: waResponse?.messages?.map((m: any) => m?.id) ?? [],
     });
@@ -206,8 +260,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
+    const status = error instanceof HttpError ? error.status : 500;
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
