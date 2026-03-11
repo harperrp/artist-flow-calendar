@@ -91,5 +91,14 @@ Edge Functions (secrets Supabase):
 - `SUPABASE_URL=https://uhumbtpkioisepqiqotl.supabase.co`
 - `SUPABASE_ANON_KEY=<anon key do projeto acima>`
 - `SUPABASE_SERVICE_ROLE_KEY=<service_role key do projeto acima>`
+- `WHATSAPP_APP_SECRET=<App Secret do app WhatsApp>` (**obrigatório em ambientes não-locais; a função falha com HTTP 500 se estiver ausente**)
 
 > Observação: o frontend e as edge functions possuem validações de segurança para falhar caso um binding de outro projeto seja configurado por engano.
+
+### Webhook do WhatsApp (assinatura obrigatória)
+
+- A função `supabase/functions/whatsapp-webhook` exige `WHATSAPP_APP_SECRET` em produção/staging (qualquer ambiente não-local).
+- Em ambiente não-local sem esse secret, a função falha no startup e também retorna `500` nas requisições.
+- Requisições `POST` sem `x-hub-signature-256` no formato `sha256=...` são rejeitadas com `401`.
+- Assinaturas inválidas continuam sendo rejeitadas com comparação timing-safe e resposta `401`.
+

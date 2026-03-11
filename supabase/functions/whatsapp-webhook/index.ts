@@ -33,6 +33,35 @@ async function signHmacSha256(secret: string, payload: string) {
 }
 
 const EXPECTED_SUPABASE_URL = "https://uhumbtpkioisepqiqotl.supabase.co";
+const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "";
+const WEBHOOK_SECRET = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const DEFAULT_ORG_ID = Deno.env.get("WHATSAPP_DEFAULT_ORGANIZATION_ID") ?? "";
+const PHONE_MAP = JSON.parse(Deno.env.get("WHATSAPP_PHONE_NUMBER_MAP") ?? "{}");
+
+function isLocalEnvironment() {
+  const envHints = [
+    Deno.env.get("SUPABASE_ENV"),
+    Deno.env.get("ENV"),
+    Deno.env.get("DENO_ENV"),
+    Deno.env.get("NODE_ENV"),
+  ].map((value) => (value || "").toLowerCase());
+
+  if (envHints.some((value) => value === "local" || value === "development" || value === "dev")) {
+    return true;
+  }
+
+  return ["localhost", "127.0.0.1", "host.docker.internal", "kong"].some((hint) =>
+    SUPABASE_URL.includes(hint)
+  );
+}
+
+const LOCAL_ENVIRONMENT = isLocalEnvironment();
+
+if (!WEBHOOK_SECRET && !LOCAL_ENVIRONMENT) {
+  throw new Error("Missing required secret WHATSAPP_APP_SECRET in non-local environment");
+}
 
 function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
@@ -78,15 +107,13 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "";
-  const WEBHOOK_SECRET = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   if (SUPABASE_URL !== EXPECTED_SUPABASE_URL) {
     return new Response("Invalid Supabase binding", { status: 500, headers: corsHeaders });
   }
-  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const DEFAULT_ORG_ID = Deno.env.get("WHATSAPP_DEFAULT_ORGANIZATION_ID") ?? "";
-  const PHONE_MAP = JSON.parse(Deno.env.get("WHATSAPP_PHONE_NUMBER_MAP") ?? "{}");
+
+  if (!WEBHOOK_SECRET && !LOCAL_ENVIRONMENT) {
+    return new Response("Missing webhook secret", { status: 500, headers: corsHeaders });
+  }
 
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -107,17 +134,15 @@ Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
 
-    if (WEBHOOK_SECRET) {
-      const signatureHeader = req.headers.get("x-hub-signature-256") || "";
-      if (!signatureHeader.startsWith("sha256=")) {
-        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
-      }
+    const signatureHeader = req.headers.get("x-hub-signature-256") || "";
+    if (!/^sha256=[A-Fa-f0-9]{64}$/.test(signatureHeader)) {
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+    }
 
-      const expected = await signHmacSha256(WEBHOOK_SECRET, rawBody);
-      const provided = signatureHeader.slice("sha256=".length);
-      if (!timingSafeEqual(provided, expected)) {
-        return new Response("Unauthorized", { status: 401, headers: corsHeaders });
-      }
+    const expected = await signHmacSha256(WEBHOOK_SECRET, rawBody);
+    const provided = signatureHeader.slice("sha256=".length).toLowerCase();
+    if (!timingSafeEqual(provided, expected)) {
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }
 
     const body = rawBody ? JSON.parse(rawBody) : {};
