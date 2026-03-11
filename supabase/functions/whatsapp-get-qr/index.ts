@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.91.0";
-import { EvolutionProvider } from "../_shared/whatsapp/evolution-provider.ts";
+import { BaileysProvider } from "../_shared/whatsapp/baileys-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const provider = new EvolutionProvider(Deno.env.get("EVOLUTION_API_URL")!, Deno.env.get("EVOLUTION_API_KEY")!);
+    const provider = new BaileysProvider(Deno.env.get("WHATSAPP_SERVER_URL")!);
     const { instanceId } = await req.json();
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       .single();
     if (instanceError) throw instanceError;
 
-    const qr = await provider.getQr(instance.external_instance_id ?? instance.name);
+    const qr = await provider.getQrCode();
 
     await supabase.from("whatsapp_instances").update({ status: qr.status, qr_code: qr.qrCode, updated_at: new Date().toISOString() }).eq("id", instanceId);
 

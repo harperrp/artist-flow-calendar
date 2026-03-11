@@ -9,8 +9,8 @@ import type {
 
 export interface WhatsAppProvider {
   createInstance(input: ProviderCreateInstanceInput): Promise<ProviderCreateInstanceResult>;
-  getQr(instanceExternalId: string): Promise<ProviderGetQrResult>;
-  disconnect(instanceExternalId: string): Promise<void>;
-  sendMessage(input: ProviderSendMessageInput): Promise<ProviderSendMessageResult>;
+  getQrCode(): Promise<ProviderGetQrResult>;
+  disconnect(): Promise<void>;
+  sendText(input: ProviderSendMessageInput): Promise<ProviderSendMessageResult>;
   parseWebhook(payload: Record<string, unknown>): NormalizedWebhookMessage[];
 }

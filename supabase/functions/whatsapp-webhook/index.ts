@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.91.0";
-import { EvolutionProvider } from "../_shared/whatsapp/evolution-provider.ts";
+import { BaileysProvider } from "../_shared/whatsapp/baileys-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const provider = new EvolutionProvider(Deno.env.get("EVOLUTION_API_URL")!, Deno.env.get("EVOLUTION_API_KEY")!);
+    const provider = new BaileysProvider(Deno.env.get("WHATSAPP_SERVER_URL")!);
     const payload = await req.json();
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
