@@ -508,6 +508,168 @@ export type Database = {
           },
         ]
       }
+      whatsapp_chats: {
+        Row: {
+          contact_name: string | null
+          contact_phone: string
+          created_at: string
+          id: string
+          instance_id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          lead_id: string | null
+          organization_id: string
+          status: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          contact_name?: string | null
+          contact_phone: string
+          created_at?: string
+          id?: string
+          instance_id: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          organization_id: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string | null
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          instance_id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          organization_id?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_instances: {
+        Row: {
+          created_at: string
+          external_instance_id: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          organization_id: string
+          phone_number: string | null
+          provider: string
+          qr_code: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_instance_id?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          organization_id: string
+          phone_number?: string | null
+          provider?: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_instance_id?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          organization_id?: string
+          phone_number?: string | null
+          provider?: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          body: string | null
+          chat_id: string
+          created_at: string
+          direction: string
+          id: string
+          instance_id: string
+          lead_id: string | null
+          media_url: string | null
+          message_type: string
+          organization_id: string
+          provider_message_id: string | null
+          raw_payload: Json | null
+          status: string
+        }
+        Insert: {
+          body?: string | null
+          chat_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          instance_id: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string
+          organization_id: string
+          provider_message_id?: string | null
+          raw_payload?: Json | null
+          status?: string
+        }
+        Update: {
+          body?: string | null
+          chat_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          instance_id?: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string
+          organization_id?: string
+          provider_message_id?: string | null
+          raw_payload?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          instance_id: string | null
+          organization_id: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          instance_id?: string | null
+          organization_id: string
+          payload: Json
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          instance_id?: string | null
+          organization_id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           city: string | null

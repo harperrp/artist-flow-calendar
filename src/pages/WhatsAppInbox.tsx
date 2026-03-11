@@ -1,185 +1,142 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { useOrg } from "@/providers/OrgProvider";
-import { db } from "@/lib/db";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { LeadMessagesThread } from "@/components/leads/LeadMessagesThread";
 import {
   useCreateWhatsAppFollowup,
   useUpsertWhatsAppTemplate,
   useWhatsAppInteractionStats,
   useWhatsAppTemplates,
 } from "@/hooks/useWhatsAppQueries";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { WhatsAppConnectCard } from "@/modules/whatsapp/components/WhatsAppConnectCard";
+import { WhatsAppChatList } from "@/modules/whatsapp/components/WhatsAppChatList";
+import { WhatsAppChatWindow } from "@/modules/whatsapp/components/WhatsAppChatWindow";
+import { WhatsAppMessageComposer } from "@/modules/whatsapp/components/WhatsAppMessageComposer";
+import { useWhatsAppInstances } from "@/modules/whatsapp/hooks/useWhatsAppInstances";
+import { useWhatsAppChats } from "@/modules/whatsapp/hooks/useWhatsAppChats";
+import { useMarkChatAsRead, useWhatsAppMessages } from "@/modules/whatsapp/hooks/useWhatsAppMessages";
+import { useWhatsAppRealtime } from "@/modules/whatsapp/hooks/useWhatsAppRealtime";
+import { useWhatsAppSendMessage } from "@/modules/whatsapp/hooks/useWhatsAppSendMessage";
 
 function applyTemplate(body: string, lead: any) {
   return body
-    .replace(/\{\{nome\}\}/g, lead?.contractor_name || "")
-    .replace(/\{\{cidade\}\}/g, lead?.city || "")
-    .replace(/\{\{regiao\}\}/g, lead?.region || lead?.state || "")
-    .replace(/\{\{data_show\}\}/g, lead?.event_date || "")
-    .replace(/\{\{valor\}\}/g, lead?.fee ? String(lead.fee) : "");
-}
-
-function hasValidPhone(phone?: string | null) {
-  const digits = (phone || "").replace(/\D/g, "");
-  return digits.length >= 10;
+    .replace(/\{\{nome\}\}/g, lead?.contactName || "")
+    .replace(/\{\{cidade\}\}/g, "")
+    .replace(/\{\{regiao\}\}/g, "")
+    .replace(/\{\{data_show\}\}/g, "")
+    .replace(/\{\{valor\}\}/g, "");
 }
 
 export function WhatsAppInboxPage() {
   const { activeOrgId } = useOrg();
-  const qc = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [selectedLeadId, setSelectedLeadId] = useState<string>("");
-  const [text, setText] = useState("");
   const [query, setQuery] = useState("");
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [followupAt, setFollowupAt] = useState("");
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateCategory, setNewTemplateCategory] = useState("apresentacao");
   const [newTemplateBody, setNewTemplateBody] = useState("");
-  const [followupAt, setFollowupAt] = useState("");
+  const [draftText, setDraftText] = useState("");
 
-  const { data: conversations = [] } = useQuery({
-    queryKey: ["whatsapp_conversations", activeOrgId],
-    enabled: !!activeOrgId,
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("leads")
-        .select("id, contractor_name, city, state, region, stage, last_message_at, last_message_preview, contact_phone, unread_count")
-        .eq("organization_id", activeOrgId)
-        .order("last_message_at", { ascending: false, nullsFirst: false });
-      if (error) throw error;
-      return data as any[];
-    },
-  });
-
-  const selected = useMemo(
-    () => conversations.find((c: any) => c.id === selectedLeadId),
-    [conversations, selectedLeadId]
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter((item: any) =>
-      [item.contractor_name, item.contact_phone, item.city, item.region, item.state]
-        .filter(Boolean)
-        .some((field: string) => field.toLowerCase().includes(q))
-    );
-  }, [conversations, query]);
+  const { data: instances = [] } = useWhatsAppInstances(activeOrgId);
+  const activeInstance = instances[0];
+  const { data: chats = [] } = useWhatsAppChats(activeOrgId, activeInstance?.id);
+  const selectedChat = useMemo(() => chats.find((chat) => chat.id === selectedChatId) ?? null, [chats, selectedChatId]);
+  const { data: messages = [], isLoading: messagesLoading } = useWhatsAppMessages(selectedChatId);
+  const markAsRead = useMarkChatAsRead();
+  const sendMessage = useWhatsAppSendMessage();
 
   const { data: templates = [] } = useWhatsAppTemplates(activeOrgId);
   const upsertTemplate = useUpsertWhatsAppTemplate(activeOrgId);
   const createFollowup = useCreateWhatsAppFollowup(activeOrgId);
   const { data: stats } = useWhatsAppInteractionStats(activeOrgId);
 
+  useWhatsAppRealtime(activeOrgId, selectedChatId);
+
   useEffect(() => {
+    const chatFromQuery = searchParams.get("chat_id");
     const leadFromQuery = searchParams.get("lead_id");
-    if (leadFromQuery) {
-      setSelectedLeadId(leadFromQuery);
+    if (chatFromQuery) {
+      setSelectedChatId(chatFromQuery);
       return;
     }
-    if (!selectedLeadId && conversations.length) {
-      setSelectedLeadId(conversations[0].id);
+    if (leadFromQuery) {
+      const byLead = chats.find((chat) => chat.leadId === leadFromQuery);
+      if (byLead) {
+        setSelectedChatId(byLead.id);
+        return;
+      }
     }
-  }, [conversations, selectedLeadId, searchParams]);
+    if (!selectedChatId && chats.length) setSelectedChatId(chats[0].id);
+  }, [searchParams, chats, selectedChatId]);
 
   useEffect(() => {
-    if (!activeOrgId) return;
-    const channel = supabase
-      .channel(`whatsapp-inbox-${activeOrgId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "lead_messages", filter: `organization_id=eq.${activeOrgId}` }, () => {
-        qc.invalidateQueries({ queryKey: ["whatsapp_conversations", activeOrgId] });
-        if (selectedLeadId) {
-          qc.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
-        }
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [activeOrgId, qc, selectedLeadId]);
+    if (selectedChat?.unreadCount && selectedChat.unreadCount > 0) {
+      markAsRead.mutate(selectedChat.id);
+    }
+  }, [selectedChat]);
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedLeadId || !text.trim()) return;
-      if (!hasValidPhone(selected?.contact_phone)) {
-        throw new Error("Este lead não possui telefone válido para WhatsApp.");
-      }
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return chats;
+    return chats.filter((chat) => [chat.contactName, chat.contactPhone].filter(Boolean).some((value) => String(value).toLowerCase().includes(q)));
+  }, [chats, query]);
 
-      const { error } = await supabase.functions.invoke("wa-send-message", {
-        body: { lead_id: selectedLeadId, text: text.trim() },
+  async function onSend(text: string) {
+    if (!activeOrgId || !selectedChat || !activeInstance) return;
+    try {
+      await sendMessage.mutateAsync({
+        organizationId: activeOrgId,
+        chatId: selectedChat.id,
+        instanceId: activeInstance.id,
+        text,
       });
-      if (error) throw error;
-      await db.from("lead_interactions").insert({
-        organization_id: activeOrgId!,
-        lead_id: selectedLeadId,
-        event_type: "message_sent",
-        payload: { content: text.trim() },
-      });
-      setText("");
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
-      qc.invalidateQueries({ queryKey: ["whatsapp_conversations", activeOrgId] });
       toast.success("Mensagem enviada");
-    },
-    onError: (error: any) => {
-      toast.error("Falha ao enviar mensagem", { description: error.message });
-    },
-  });
+    } catch (error: any) {
+      toast.error("Falha ao enviar", { description: error.message });
+    }
+  }
 
   async function createTemplate() {
     if (!newTemplateName.trim() || !newTemplateBody.trim()) {
       toast.error("Preencha nome e conteúdo do template");
       return;
     }
-
-    try {
-      await upsertTemplate.mutateAsync({
-        name: newTemplateName.trim(),
-        category: newTemplateCategory,
-        body: newTemplateBody,
-        variables: ["nome", "cidade", "regiao", "data_show", "valor"],
-      });
-      setNewTemplateName("");
-      setNewTemplateBody("");
-      toast.success("Template salvo");
-    } catch (error: any) {
-      toast.error("Erro ao salvar template", { description: error.message });
-    }
+    await upsertTemplate.mutateAsync({
+      name: newTemplateName.trim(),
+      category: newTemplateCategory,
+      body: newTemplateBody,
+      variables: ["nome", "cidade", "regiao", "data_show", "valor"],
+    });
+    setNewTemplateName("");
+    setNewTemplateBody("");
+    toast.success("Template salvo");
   }
 
   async function scheduleFollowup() {
-    if (!selectedLeadId || !followupAt) {
+    if (!selectedChat?.leadId || !followupAt) {
       toast.error("Selecione conversa e data");
       return;
     }
-    try {
-      await createFollowup.mutateAsync({
-        lead_id: selectedLeadId,
-        title: "Follow-up WhatsApp",
-        due_at: new Date(followupAt).toISOString(),
-      });
-      toast.success("Follow-up agendado");
-      setFollowupAt("");
-    } catch (error: any) {
-      toast.error("Erro ao agendar follow-up", { description: error.message });
-    }
+    await createFollowup.mutateAsync({
+      lead_id: selectedChat.leadId,
+      title: "Follow-up WhatsApp",
+      due_at: new Date(followupAt).toISOString(),
+    });
+    toast.success("Follow-up agendado");
+    setFollowupAt("");
   }
 
   return (
     <div className="space-y-4">
+      <WhatsAppConnectCard orgId={activeOrgId ?? ""} instance={activeInstance} />
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Conversas ativas</p><p className="text-xl font-semibold">{stats?.activeConversations ?? 0}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Conversas ativas</p><p className="text-xl font-semibold">{stats?.activeConversations ?? chats.length}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sem resposta</p><p className="text-xl font-semibold">{stats?.leadsWithoutReply ?? 0}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Enviadas hoje</p><p className="text-xl font-semibold">{stats?.sentToday ?? 0}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Recebidas hoje</p><p className="text-xl font-semibold">{stats?.receivedToday ?? 0}</p></Card>
@@ -187,63 +144,34 @@ export function WhatsAppInboxPage() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Taxa resposta</p><p className="text-xl font-semibold">{stats?.responseRate ?? 0}%</p></Card>
       </div>
 
-      <div className="h-[calc(100vh-320px)] grid grid-cols-1 xl:grid-cols-[320px,1fr,320px] gap-4">
+      <div className="h-[calc(100vh-360px)] grid grid-cols-1 xl:grid-cols-[320px,1fr,320px] gap-4">
         <Card className="overflow-hidden">
           <div className="p-3 border-b space-y-2">
             <div className="font-semibold">Conversas</div>
-            <Input placeholder="Buscar nome, telefone, região..." value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Input placeholder="Buscar nome, telefone..." value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
-          <ScrollArea className="h-full">
-            <div className="p-2 space-y-2">
-              {filtered.map((lead: any) => (
-                <button
-                  key={lead.id}
-                  onClick={() => setSelectedLeadId(lead.id)}
-                  className={`w-full text-left p-3 rounded border transition ${selectedLeadId === lead.id ? "bg-primary/10 border-primary" : "hover:bg-muted"}`}
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="font-medium text-sm truncate">{lead.contractor_name}</div>
-                    {lead.last_message_at && (
-                      <div className="text-[11px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(lead.last_message_at), { addSuffix: true, locale: ptBR })}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate mt-1">{lead.last_message_preview || "Sem mensagens"}</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{lead.stage || "Sem etapa"}</Badge>
-                    {lead.unread_count > 0 && <Badge className="text-[10px]">{lead.unread_count} novas</Badge>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
+          <WhatsAppChatList chats={filtered} selectedChatId={selectedChatId} onSelectChat={setSelectedChatId} />
         </Card>
 
         <Card className="flex flex-col overflow-hidden">
-          <div className="p-3 border-b font-semibold">{selected?.contractor_name ?? "Selecione uma conversa"}</div>
-          <div className="flex-1 min-h-0">{selectedLeadId ? <LeadMessagesThread leadId={selectedLeadId} /> : null}</div>
+          <div className="p-3 border-b font-semibold">{selectedChat?.contactName ?? selectedChat?.contactPhone ?? "Selecione uma conversa"}</div>
+          <div className="flex-1 min-h-0">
+            <WhatsAppChatWindow messages={messages} isLoading={messagesLoading} />
+          </div>
           <div className="p-3 border-t space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-xs">Template:</Label>
-              <div className="flex flex-wrap gap-1">
-                {templates.slice(0, 4).map((template: any) => (
-                  <Button
-                    key={template.id}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setText(applyTemplate(template.body, selected))}
-                  >
-                    {template.name}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {templates.slice(0, 4).map((template: any) => (
+                <Button key={template.id} type="button" variant="outline" size="sm" onClick={() => setDraftText(applyTemplate(template.body, selectedChat))}>
+                  {template.name}
+                </Button>
+              ))}
+              {draftText ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => onSend(draftText)}>
+                  Enviar template
+                </Button>
+              ) : null}
             </div>
-            <div className="flex gap-2">
-              <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite sua resposta..." onKeyDown={(e) => e.key === "Enter" && sendMessageMutation.mutate()} />
-              <Button onClick={() => sendMessageMutation.mutate()} disabled={sendMessageMutation.isPending || !text.trim() || !hasValidPhone(selected?.contact_phone)}>Enviar</Button>
-            </div>
+            <WhatsAppMessageComposer onSend={onSend} disabled={!selectedChat || !activeInstance} loading={sendMessage.isPending} />
           </div>
         </Card>
 
@@ -255,7 +183,6 @@ export function WhatsAppInboxPage() {
                 <Input type="datetime-local" value={followupAt} onChange={(e) => setFollowupAt(e.target.value)} />
                 <Button className="w-full" onClick={scheduleFollowup}>Agendar</Button>
               </div>
-
               <div className="space-y-2 border-t pt-3">
                 <h3 className="font-semibold text-sm">Novo template</h3>
                 <Input placeholder="Nome" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} />
