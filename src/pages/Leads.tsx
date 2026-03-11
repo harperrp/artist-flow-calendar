@@ -127,6 +127,14 @@ export function LeadsPage() {
     return digits.length >= 10;
   }
 
+  function getLeadDisplayName(lead: any) {
+    const rawName = String(lead?.contractor_name || "").trim();
+    const normalizedPhone = String(lead?.contact_phone || lead?.whatsapp_phone || "").replace(/\D/g, "");
+    const looksGeneric = !rawName || /^lead\s*whatsapp$/i.test(rawName) || /^\d{10,}$/.test(rawName);
+    if (looksGeneric && normalizedPhone) return `Lead ${normalizedPhone}`;
+    return rawName || "Lead sem nome";
+  }
+
   async function handleDialogResult(data: any) {
     if (!activeOrgId || !data) return;
     const user = (await supabase.auth.getUser()).data.user;
@@ -332,7 +340,7 @@ export function LeadsPage() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-sm truncate">{lead.contractor_name}</div>
+                              <div className="font-semibold text-sm truncate">{getLeadDisplayName(lead)}</div>
                               <div className="text-xs text-muted-foreground truncate mt-0.5">
                                 {[lead.city, lead.state].filter(Boolean).join(" / ") || "Sem localização"}
                               </div>
