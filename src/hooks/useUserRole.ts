@@ -4,6 +4,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useOrg } from "@/providers/OrgProvider";
 
 export type AppRole = "admin" | "comercial" | "financeiro" | "artista";
+export type AccessRole = AppRole | "no_access";
 
 const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Admin",
@@ -31,22 +32,24 @@ export function useUserRole() {
     },
   });
 
-  const role: AppRole = membership?.role ?? "comercial";
+  const role: AccessRole = membership?.role ?? "no_access";
+  const hasAccess = role !== "no_access";
 
   return {
     role,
-    roleLabel: ROLE_LABELS[role] || role,
+    roleLabel: hasAccess ? ROLE_LABELS[role] : "Sem acesso",
     isLoading,
+    hasAccess,
     isAdmin: role === "admin",
     isFinanceiro: role === "financeiro" || role === "admin",
     isAtendente: role === "comercial",
     isArtista: role === "artista",
     // Atendente can see lead fee + paid status but NOT monthly totals
-    canViewFinancialDetails: role !== "artista",
+    canViewFinancialDetails: role === "comercial" || role === "financeiro" || role === "admin",
     canViewFinancialTotals: role === "financeiro" || role === "admin",
     canManageFinancials: role === "financeiro" || role === "admin",
     canManageLeads: role === "comercial" || role === "admin",
-    canManageTasks: role !== "artista",
+    canManageTasks: role === "comercial" || role === "financeiro" || role === "admin",
   };
 }
 
