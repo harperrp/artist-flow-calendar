@@ -2,6 +2,7 @@ export interface WhatsAppVpsStatus {
   serverOnline: boolean;
   whatsappConnected: boolean;
   state: string;
+  qrAvailable?: boolean;
   message?: string;
 }
 
@@ -45,25 +46,32 @@ async function requestJson(path: string, init?: RequestInit) {
 }
 
 function normalizeStatus(raw: any): WhatsAppVpsStatus {
+  const state = String(raw?.state || raw?.session || raw?.status || "").toLowerCase();
+
+  const stateImpliesOnline = ["ok", "connected", "qr_ready", "starting", "disconnected", "open", "close", "session_open"].includes(state);
+  const stateImpliesConnected = ["connected", "open", "session_open"].includes(state);
+
   const online =
     raw?.serverOnline ??
     raw?.online ??
     raw?.ok ??
-    raw?.status === "ok" ??
-    true;
+    stateImpliesOnline;
 
   const connected =
     raw?.whatsappConnected ??
     raw?.connected ??
     raw?.isConnected ??
-    raw?.session === "CONNECTED" ??
-    raw?.state === "open" ??
-    false;
+    stateImpliesConnected;
+
+  const qrAvailable =
+    raw?.qrAvailable ??
+    Boolean(raw?.qrCode || raw?.qr || raw?.image || raw?.data);
 
   return {
     serverOnline: Boolean(online),
     whatsappConnected: Boolean(connected),
-    state: String(raw?.state || raw?.session || (connected ? "connected" : "disconnected")),
+    state: state || (connected ? "connected" : "disconnected"),
+    qrAvailable: Boolean(qrAvailable),
     message: raw?.message,
   };
 }

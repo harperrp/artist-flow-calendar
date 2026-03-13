@@ -1,0 +1,300 @@
+# PROJECT CONTEXT
+
+## Nome do projeto
+CRM para artistas, produtores e atendimento comercial via WhatsApp.
+
+## Objetivo
+Centralizar captação de leads, atendimento comercial, gestão de conversas, pipeline de vendas, tarefas e automações em um único sistema.
+
+---
+
+## Stack principal
+- React
+- Vite
+- TypeScript
+- Supabase
+- Edge Functions
+- WhatsApp Cloud API
+- WhatsApp VPS com QR Code (Baileys)
+
+---
+
+## Estrutura geral
+O projeto possui:
+- Frontend em `src/`
+- Backend Supabase em `supabase/`
+- Banco versionado em `supabase/migrations/`
+- Edge Functions em `supabase/functions/`
+- Dados exportados em `supabase/data.sql`
+
+---
+
+## Módulos já existentes
+
+### 1. Leads
+Responsável por cadastrar, listar, editar e acompanhar leads comerciais.
+
+Principais recursos:
+- criação manual de leads
+- atualização de dados
+- associação com telefone/WhatsApp
+- histórico comercial
+- estágio do funil
+
+Tabelas relacionadas:
+- leads
+- lead_interactions
+- funnel_stages
+- whatsapp_conversations
+
+---
+
+### 2. WhatsApp Inbox
+Responsável por exibir conversas e enviar/receber mensagens.
+
+Principais recursos:
+- visualização de conversas
+- envio de mensagens pelo CRM
+- recebimento via webhook
+- associação automática com lead
+- contagem de não lidas
+
+Integrações:
+- WhatsApp Cloud API
+- WhatsApp VPS QR Code / Baileys
+
+Tabelas relacionadas:
+- whatsapp_conversations
+- whatsapp_messages
+- leads
+
+Funções relacionadas:
+- wa-send-message
+- whatsapp-webhook
+- whatsapp-webhook-baileys
+
+---
+
+### 3. Pipeline comercial
+Responsável por controlar o estágio do lead no funil.
+
+Principais recursos:
+- mover lead entre etapas
+- acompanhar negociação
+- status comercial
+- previsão de fechamento
+
+Tabelas relacionadas:
+- funnel_stages
+- leads
+
+---
+
+### 4. Tarefas e follow-up
+Responsável por lembrar contatos e ações comerciais.
+
+Principais recursos:
+- tarefas por lead
+- lembretes
+- follow-ups automáticos
+- notificações de prazo
+
+Tabelas relacionadas:
+- tasks
+- whatsapp_followups
+
+Funções relacionadas:
+- task-deadline-notifications
+
+---
+
+### 5. Convites de usuários
+Responsável por convidar usuários para acesso ao CRM.
+
+Funções relacionadas:
+- invite-user
+
+---
+
+### 6. Configuração Supabase
+Responsável pela infraestrutura backend.
+
+Inclui:
+- migrations
+- policies
+- triggers
+- funções SQL
+- Edge Functions
+- export de dados
+
+Arquivos:
+- supabase/config.toml
+- supabase/migrations/
+- supabase/functions/
+- supabase/data.sql
+
+---
+
+## Integrações existentes
+
+### Supabase
+Usado para:
+- banco de dados
+- autenticação
+- Edge Functions
+- storage
+- regras de acesso
+
+### WhatsApp Cloud API
+Usado para:
+- envio oficial de mensagens
+- webhook Meta
+
+### WhatsApp VPS com QR Code (Baileys)
+Usado para:
+- conexão via QR Code
+- alternativa ao token temporário
+- testes e operação sem depender exclusivamente da Cloud API
+
+---
+
+## Edge Functions existentes
+- invite-user
+- task-deadline-notifications
+- wa-send-message
+- whatsapp-webhook
+- whatsapp-webhook-baileys
+
+---
+
+## Arquivos importantes
+- `src/`
+- `public/`
+- `scripts/`
+- `supabase/migrations/`
+- `supabase/functions/`
+- `supabase/data.sql`
+- `package.json`
+- `.env.example`
+
+---
+
+## Módulos que parecem estar faltando ou precisam revisão
+
+### 1. Painel de configurações do WhatsApp
+Possível necessidade:
+- alternar facilmente entre Cloud API e VPS QR
+- mostrar claramente qual canal está ativo
+- evitar conflito entre canais simultâneos
+
+### 2. Módulo de automações
+Possível necessidade:
+- regras automáticas por estágio
+- mensagens automáticas
+- follow-up inteligente
+- gatilhos por tempo ou evento
+
+### 3. Dashboard gerencial
+Possível necessidade:
+- métricas de leads
+- conversão por etapa
+- quantidade de mensagens
+- tempo médio de resposta
+- performance comercial
+
+### 4. Agenda / calendário
+Possível necessidade:
+- compromissos
+- reuniões
+- shows
+- retornos comerciais
+- tarefas com data
+
+### 5. Templates de mensagens
+Possível necessidade:
+- biblioteca de mensagens prontas
+- envio rápido
+- personalização por lead
+- modelos comerciais
+
+### 6. Permissões e níveis de acesso
+Possível necessidade:
+- super admin
+- atendente
+- comercial
+- gestor
+
+### 7. Uploads e anexos
+Possível necessidade:
+- envio de arquivos em conversas
+- documentos do lead
+- contratos
+- mídia
+
+---
+
+## Problemas já identificados anteriormente
+- conflito entre WhatsApp Cloud API e WhatsApp VPS
+- leads criados com número inválido
+- schema cache error em colunas
+- risco de o Lovable sobrescrever configurações
+- necessidade de versionar tudo fora do Lovable
+
+---
+
+## Objetivo do próximo desenvolvimento
+- estabilizar módulo de WhatsApp
+- evitar conflitos entre canais
+- melhorar gestão de leads
+- completar módulos faltantes
+- organizar CRM como produto SaaS profissional
+
+---
+
+## Observações para quem continuar o projeto
+- usar a pasta `supabase/` como fonte do backend
+- revisar Edge Functions antes de publicar
+- validar variáveis de ambiente antes de deploy
+- não expor chaves reais no repositório
+- priorizar compatibilidade entre frontend e schema atual do banco
+↓
+WhatsApp Cloud API ou VPS
+
+VPS WhatsApp QR
+
+Servidor Node (porta 3000)# CRM WhatsApp – Arquitetura
+
+Stack:
+- React + Vite
+- Supabase
+- Edge Functions
+- WhatsApp Cloud API
+- WhatsApp VPS QR (Baileys)
+
+Fluxo atual:
+
+Cliente envia mensagem WhatsApp
+↓
+Webhook (supabase/functions/whatsapp-webhook)
+↓
+Salva no banco:
+- leads
+- whatsapp_conversations
+↓
+Inbox CRM mostra conversa
+
+Envio de mensagem:
+
+CRM
+↓
+wa-send-message
+
+
+Rotas:
+
+/qr
+/status
+/send
+/webhook
+
+Sessão salva localmente no VPS.

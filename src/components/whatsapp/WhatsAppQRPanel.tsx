@@ -4,25 +4,36 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, CheckCircle2, Loader2, QrCode, RefreshCw, Server } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  QrCode,
+  RefreshCw,
+  Server,
+} from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getWhatsAppVpsQrCode,
   getWhatsAppVpsStatus,
-  sendWhatsAppVpsMessage,
 } from "@/services/whatsappVps";
 
 interface WhatsAppQRPanelProps {
+  leadId?: string | null;
   leadPhone?: string | null;
   leadName?: string | null;
-  onMessageSent?: (text: string) => Promise<void> | void;
 }
 
 function normalizePhone(phone?: string | null) {
   return (phone || "").replace(/\D/g, "");
 }
 
-export function WhatsAppQRPanel({ leadPhone, leadName, onMessageSent }: WhatsAppQRPanelProps) {
+export function WhatsAppQRPanel({
+  leadId,
+  leadPhone,
+  leadName,
+}: WhatsAppQRPanelProps) {
   const [message, setMessage] = useState("");
 
   const normalizedPhone = useMemo(() => normalizePhone(leadPhone), [leadPhone]);
@@ -37,31 +48,43 @@ export function WhatsAppQRPanel({ leadPhone, leadName, onMessageSent }: WhatsApp
   const qrQuery = useQuery({
     queryKey: ["whatsapp_vps_qr"],
     queryFn: getWhatsAppVpsQrCode,
-    enabled: Boolean(statusQuery.data?.serverOnline && !statusQuery.data?.whatsappConnected),
+    enabled: Boolean(
+      statusQuery.data?.serverOnline &&
+        !statusQuery.data?.whatsappConnected &&
+        (statusQuery.data?.state === "qr_ready" ||
+          statusQuery.data?.qrAvailable)
+    ),
     refetchInterval: 10000,
     retry: false,
   });
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      if (!normalizedPhone) {
-        throw new Error("Este lead não possui telefone válido para envio.");
+      if (!leadId) {
+        throw new Error("Selecione um lead válido para envio.");
       }
+
+      if (!normalizedPhone) {
+        throw new Error("Lead sem telefone válido para envio.");
+      }
+
       if (!message.trim()) {
         throw new Error("Digite uma mensagem antes de enviar.");
       }
 
-      await sendWhatsAppVpsMessage({
-        phone: normalizedPhone,
-        text: message.trim(),
+      const { error } = await supabase.functions.invoke("wa-send-message", {
+        body: {
+          lead_id: leadId,
+          text: message.trim(),
+          mode: "vps",
+          provider: "vps",
+        },
       });
+
+      if (error) throw error;
     },
-    onSuccess: async () => {
-      try {
-        await onMessageSent?.(message.trim());
-      } finally {
-        setMessage("");
-      }
+    onSuccess: () => {
+      setMessage("");
       toast.success("Mensagem enviada via WhatsApp VPS");
     },
     onError: (error: any) => {
@@ -73,16 +96,23 @@ export function WhatsAppQRPanel({ leadPhone, leadName, onMessageSent }: WhatsApp
 
   const isConnected = statusQuery.data?.whatsappConnected;
 
+  const isWaitingQr =
+    !isConnected &&
+    statusQuery.data?.serverOnline &&
+    (statusQuery.data?.state === "qr_ready" ||
+      statusQuery.data?.qrAvailable);
+
   return (
     <div className="space-y-3 p-3">
-      <Card className="p-3 space-y-3">
+      <Card className="space-y-3 p-3">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
-            <h3 className="font-semibold text-sm">WhatsApp VPS (QR Code)</h3>
+            <h3 className="text-sm font-semibold">WhatsApp VPS (QR Code)</h3>
             <p className="text-xs text-muted-foreground">
-              Fluxo novo e isolado: conexão via VPS/Baileys, sem substituir o WhatsApp Cloud atual.
+              Fluxo novo e isolado: conexão via VPS/Baileys.
             </p>
           </div>
+
           <Button
             type="button"
             variant="outline"
@@ -92,75 +122,110 @@ export function WhatsAppQRPanel({ leadPhone, leadName, onMessageSent }: WhatsApp
               qrQuery.refetch();
             }}
           >
-            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Atualizar
+            <RefreshCw className="mr-1 h-3.5 w-3.5" />
+            Atualizar
           </Button>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">
-            <Server className="h-3 w-3 mr-1" />
+            <Server className="mr-1 h-3 w-3" />
             {statusQuery.isLoading
               ? "Verificando servidor..."
               : statusQuery.data?.serverOnline
-              ? "Servidor online"
-              : "Servidor offline"}
+                ? "Servidor online"
+                : "Servidor offline"}
           </Badge>
+
           <Badge variant={isConnected ? "default" : "secondary"}>
             {isConnected ? (
-              <><CheckCircle2 className="h-3 w-3 mr-1" /> WhatsApp conectado</>
+              <>
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                WhatsApp conectado
+              </>
+            ) : isWaitingQr ? (
+              <>
+                <QrCode className="mr-1 h-3 w-3" />
+                Aguardando leitura do QR
+              </>
             ) : (
-              <><QrCode className="h-3 w-3 mr-1" /> WhatsApp desconectado</>
+              <>
+                <QrCode className="mr-1 h-3 w-3" />
+                WhatsApp desconectado
+              </>
             )}
           </Badge>
         </div>
 
         {statusQuery.isError && (
-          <div className="text-xs rounded-md border border-destructive/40 bg-destructive/5 text-destructive p-2 flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              Não foi possível conectar ao servidor VPS. Verifique a URL do ambiente e se o serviço está ativo na porta 3000.
+              Não foi possível conectar ao servidor VPS. Verifique a URL do
+              ambiente e se o serviço está ativo na porta 3000.
             </span>
           </div>
         )}
 
-        {!isConnected && statusQuery.data?.serverOnline && (
-          <Card className="p-3 bg-muted/30 border-dashed">
-            <p className="text-xs text-muted-foreground mb-2">Escaneie o QR Code para autenticar a sessão do WhatsApp.</p>
+        {isWaitingQr && (
+          <Card className="border-dashed bg-muted/30 p-3">
+            <p className="mb-2 text-xs text-muted-foreground">
+              Escaneie o QR Code para autenticar o WhatsApp.
+            </p>
+
             {qrQuery.isLoading ? (
-              <div className="h-40 flex items-center justify-center text-xs text-muted-foreground">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Carregando QR Code...
+              <div className="flex h-40 items-center justify-center text-xs text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Carregando QR Code...
               </div>
             ) : qrQuery.data ? (
               <img
                 src={qrQuery.data}
-                alt="QR Code do WhatsApp VPS"
-                className="mx-auto w-48 h-48 rounded-md border bg-white p-2"
+                alt="QR Code WhatsApp"
+                className="mx-auto h-48 w-48 rounded-md border bg-white p-2"
               />
             ) : (
-              <div className="text-xs text-muted-foreground">QR indisponível no momento. Clique em atualizar.</div>
+              <div className="text-xs text-muted-foreground">
+                QR indisponível. Clique em atualizar.
+              </div>
             )}
           </Card>
         )}
       </Card>
 
-      <Card className="p-3 space-y-2">
+      <Card className="space-y-2 p-3">
         <p className="text-sm font-medium">Enviar mensagem via VPS</p>
+
         <p className="text-xs text-muted-foreground">
-          Destino: {leadName || "Lead"} {normalizedPhone ? `(${normalizedPhone})` : "(sem telefone válido)"}
+          Destino: {leadName || "Lead"}{" "}
+          {normalizedPhone ? `(${normalizedPhone})` : "(sem telefone válido)"}
         </p>
+
         <div className="flex gap-2">
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Digite a mensagem para envio via VPS..."
-            onKeyDown={(e) => e.key === "Enter" && sendMutation.mutate()}
+            placeholder="Digite a mensagem..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMutation.mutate();
+              }
+            }}
           />
+
           <Button
             type="button"
             onClick={() => sendMutation.mutate()}
-            disabled={sendMutation.isPending || !message.trim() || !normalizedPhone}
+            disabled={
+              sendMutation.isPending ||
+              !message.trim() ||
+              !leadId ||
+              !normalizedPhone
+            }
           >
-            {sendMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            {sendMutation.isPending && (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            )}
             Enviar VPS
           </Button>
         </div>

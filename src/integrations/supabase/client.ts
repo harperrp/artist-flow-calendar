@@ -6,13 +6,23 @@ const EXPECTED_SUPABASE_PROJECT_ID = 'uhumbtpkioisepqiqotl';
 const EXPECTED_SUPABASE_URL = `https://${EXPECTED_SUPABASE_PROJECT_ID}.supabase.co`;
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const isLocalDev =
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname.startsWith('192.168.') ||
+  window.location.hostname.startsWith('10.') ||
+  window.location.hostname.startsWith('172.');
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error('Supabase env vars ausentes: VITE_SUPABASE_URL e/ou VITE_SUPABASE_PUBLISHABLE_KEY.');
+  throw new Error(
+    'Supabase env vars ausentes: VITE_SUPABASE_URL e/ou VITE_SUPABASE_PUBLISHABLE_KEY (ou VITE_SUPABASE_ANON_KEY).'
+  );
 }
 
-if (SUPABASE_URL !== EXPECTED_SUPABASE_URL) {
+if (!isLocalDev && SUPABASE_URL !== EXPECTED_SUPABASE_URL) {
   throw new Error(
     `Configuração inválida do Supabase: esperado ${EXPECTED_SUPABASE_URL}, recebido ${SUPABASE_URL}.`
   );
@@ -26,5 +36,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });

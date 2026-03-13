@@ -122,12 +122,6 @@ export function WhatsAppInboxPage() {
         body: { lead_id: selectedLeadId, text: text.trim() },
       });
       if (error) throw error;
-      await db.from("lead_interactions").insert({
-        organization_id: activeOrgId!,
-        lead_id: selectedLeadId,
-        event_type: "message_sent",
-        payload: { content: text.trim() },
-      });
       setText("");
     },
     onSuccess: () => {
@@ -139,18 +133,6 @@ export function WhatsAppInboxPage() {
       toast.error("Falha ao enviar mensagem", { description: error.message });
     },
   });
-
-  async function registerSentInteraction(content: string) {
-    if (!activeOrgId || !selectedLeadId) return;
-    await db.from("lead_interactions").insert({
-      organization_id: activeOrgId,
-      lead_id: selectedLeadId,
-      event_type: "message_sent",
-      payload: { content, channel: "whatsapp_vps" },
-    });
-    qc.invalidateQueries({ queryKey: ["whatsapp_conversations", activeOrgId] });
-    qc.invalidateQueries({ queryKey: ["lead_messages", selectedLeadId] });
-  }
 
   async function createTemplate() {
     if (!newTemplateName.trim() || !newTemplateBody.trim()) {
@@ -273,9 +255,9 @@ export function WhatsAppInboxPage() {
 
             <TabsContent value="vps" className="m-0 flex-1 overflow-auto">
               <WhatsAppQRPanel
+                leadId={selectedLeadId}
                 leadName={selected?.contractor_name}
                 leadPhone={selected?.contact_phone}
-                onMessageSent={registerSentInteraction}
               />
             </TabsContent>
           </Tabs>

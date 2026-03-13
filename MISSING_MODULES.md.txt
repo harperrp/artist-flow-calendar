@@ -1,0 +1,38 @@
+# MISSING MODULES
+
+## Alta prioridade
+- alternância clara entre WhatsApp Cloud API e WhatsApp VPS QR
+- prevenção de conflitos entre canais simultâneos
+- validação forte de número antes de criar lead
+- revisão do inbox WhatsApp
+- correção de criação de leads com número inválido
+
+## Média prioridade
+- dashboard gerencial com métricas
+- automações por estágio do funil
+- agenda/calendário
+- templates de mensagens
+- permissões por perfil
+
+## Futuro
+- anexos e documentos
+- múltiplos atendentes
+- auditoria de ações
+- multiempresa / SaaS completo
+
+Último código que funcionava bem:
+- envio pelo CRM funcionando
+- Cloud API funcionando parcialmente
+- estrutura Supabase já organizada
+
+Última alteração que quebrou:
+- convivência entre Cloud API e VPS QR
+- novo fluxo com whatsapp-webhook-baileys
+- criação de leads incorretos
+
+Objetivo final do módulo WhatsApp:
+- manter Cloud API original
+- adicionar VPS QR na porta 3000
+- permitir alternância sem conflito
+- garantir que mensagem recebida atualize/crie o lead correto
+- refletir tudo no Inbox e no painel do lead

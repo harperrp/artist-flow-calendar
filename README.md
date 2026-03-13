@@ -102,3 +102,32 @@ Edge Functions (secrets Supabase):
 - Requisições `POST` sem `x-hub-signature-256` no formato `sha256=...` são rejeitadas com `401`.
 - Assinaturas inválidas continuam sendo rejeitadas com comparação timing-safe e resposta `401`.
 
+# CRM Beta
+
+CRM with WhatsApp integration using:
+
+- React + Vite
+- Supabase
+- WhatsApp Cloud API
+- WhatsApp VPS QR (Baileys)
+
+## Features
+
+- Lead management
+- WhatsApp inbox
+- WhatsApp Cloud API
+- WhatsApp VPS QR login
+- Supabase database
+
+## Architecture
+
+Frontend → React
+Backend → Supabase Edge Functions
+WhatsApp VPS → Node.js Baileys server
+
+## Folder structure
+
+src/ → frontend
+supabase/ → database and edge functions
+whatsapp-vps/ → QR WhatsApp server
+
