@@ -6,22 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { OrgProvider } from "@/providers/OrgProvider";
 import { AppShell } from "@/components/layout/AppShell";
-import { LandingPage } from "@/pages/LandingPage";
-import { DashboardPage } from "@/pages/Dashboard";
 import { LeadsPage } from "@/pages/Leads";
-import { ContractsCrudPage } from "@/pages/ContractsCrud";
-import { MapViewPage } from "@/pages/MapView";
-import { FinancialPage } from "@/pages/Financial";
-import { ContactsPage } from "@/pages/Contacts";
-import { ArtistCalendarPage } from "@/components/artist-calendar/ArtistCalendarPage";
-import { TeamPage } from "@/pages/Team";
-import { TasksPage } from "@/pages/Tasks";
-import { UsersPage } from "@/pages/Users";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { ArtistDashboardPage } from "@/pages/ArtistDashboard";
-import { SuperAdminPage } from "@/pages/SuperAdmin";
 import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
 
 
