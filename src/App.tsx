@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
 import { WhatsAppSettingsPage } from "@/pages/WhatsAppSettings";
+import { DashboardPage } from "@/pages/Dashboard";
 
 const queryClient = new QueryClient();
 

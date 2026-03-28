@@ -1,147 +1,85 @@
 import { useOrg } from "@/providers/OrgProvider";
-import { useLeads, useContracts, useCalendarEvents } from "@/hooks/useCrmQueries";
-import { useUserRole } from "@/hooks/useUserRole";
-import { monthStats } from "@/lib/calendar-utils";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { MapPin } from "lucide-react";
+import { useLeads } from "@/hooks/useCrmQueries";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
-import { MapPreview } from "@/components/map/MapPreview";
-import { DashboardStats } from "@/components/dashboard/StatsCards";
-import { UpcomingShows } from "@/components/dashboard/UpcomingShows";
-import { PendingTasks } from "@/components/dashboard/PendingTasks";
-import { RecentActivities } from "@/components/dashboard/RecentActivities";
-import { FinanceQuickCard } from "@/components/dashboard/FinanceQuickCard";
-import {
-  ShowsPerMonthChart,
-  RevenueChart,
-  FunnelPieChart,
-  LeadsPerMonthChart,
-} from "@/components/dashboard/DashboardCharts";
+import { Handshake, MessageCircle, TrendingUp, Users } from "lucide-react";
 
 export function DashboardPage() {
   const { activeOrgId } = useOrg();
-  const { canViewFinancialTotals } = useUserRole();
   const { data: leads = [] } = useLeads(activeOrgId);
-  const { data: contracts = [] } = useContracts(activeOrgId);
-  const { data: dbEvents = [] } = useCalendarEvents(activeOrgId);
 
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const monthLabel = format(now, "MMMM yyyy", { locale: ptBR });
-
-  // Map DB events to CalendarEvent format for stats
-  const events = dbEvents.map((e: any) => ({
-    id: e.id,
-    title: e.title,
-    status: e.status as "negotiation" | "confirmed" | "blocked" | "hold",
-    start: e.start_time,
-    end: e.end_time,
-    fee: e.fee,
-    city: e.city,
-    state: e.state,
-  }));
-
-  const stats = monthStats(now, events);
-
-  // Calculate additional stats
-  const leadsInNegotiation = leads.filter(
-    (l: any) => l.stage === "Negociação"
-  ).length;
-  const totalEstimated =
-    leads.reduce((acc: number, l: any) => acc + (l.fee || 0), 0) +
-    stats.estimatedRevenue;
-
-  // Shows this month
-  const monthEvents = dbEvents.filter((e: any) => {
-    const d = parseISO(e.start_time);
-    return d >= monthStart && d <= monthEnd;
+  const { data: conversations = [] } = useQuery({
+    queryKey: ["conversations_count", activeOrgId],
+    enabled: !!activeOrgId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("whatsapp_conversations")
+        .select("id")
+        .eq("organization_id", activeOrgId!);
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
-  // Map data for preview (leads + events with coordinates)
-  const mapMarkers = [
-    ...leads
-      .filter((l: any) => l.latitude && l.longitude)
-      .map((l: any) => ({
-        id: l.id,
-        type: "lead" as const,
-        lat: parseFloat(l.latitude),
-        lng: parseFloat(l.longitude),
-        title: l.contractor_name,
-        city: l.city,
-        state: l.state,
-        status: l.stage,
-      })),
-    ...dbEvents
-      .filter((e: any) => e.latitude && e.longitude)
-      .map((e: any) => ({
-        id: e.id,
-        type: "event" as const,
-        lat: parseFloat(e.latitude),
-        lng: parseFloat(e.longitude),
-        title: e.title,
-        city: e.city,
-        state: e.state,
-        status: e.status,
-      })),
+  const inNegotiation = leads.filter((l: any) =>
+    ["Negociação", "Proposta"].includes(l.stage)
+  ).length;
+
+  const closed = leads.filter((l: any) => l.stage === "Fechado").length;
+
+  const stats = [
+    {
+      icon: Users,
+      label: "Total de Leads",
+      value: leads.length,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      icon: MessageCircle,
+      label: "Conversas",
+      value: conversations.length,
+      color: "text-green-500",
+      bg: "bg-green-500/10",
+    },
+    {
+      icon: TrendingUp,
+      label: "Em Negociação",
+      value: inNegotiation,
+      color: "text-yellow-500",
+      bg: "bg-yellow-500/10",
+    },
+    {
+      icon: Handshake,
+      label: "Fechados",
+      value: closed,
+      color: "text-primary",
+      bg: "bg-primary/10",
+    },
   ];
 
   return (
-    <div className="space-y-6 fade-up">
-      {/* Header */}
+    <div className="p-6 space-y-6 fade-up">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground capitalize">
-          Visão geral de {monthLabel}
-        </p>
+        <p className="text-sm text-muted-foreground">Visão geral do CRM</p>
       </div>
 
-      {/* Main stats */}
-      <DashboardStats
-        confirmedShows={stats.confirmedCount}
-        negotiationCount={stats.negotiationCount}
-        totalLeads={leads.length}
-        estimatedRevenue={totalEstimated}
-        pendingContracts={contracts.filter((c: any) => c.status === "pending").length}
-        freeDays={stats.freeDays}
-      />
-
-      {/* Charts row */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ShowsPerMonthChart />
-        <FunnelPieChart />
-      </div>
-
-      {/* Second charts row */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <RevenueChart />
-        <LeadsPerMonthChart />
-      </div>
-
-      {/* Map + Upcoming shows */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border bg-card/70 overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Mapa de Oportunidades
-            </h2>
-            <p className="text-xs text-muted-foreground">Leads e shows no mapa</p>
-          </div>
-          <div className="h-[300px]">
-            <MapPreview markers={mapMarkers} />
-          </div>
-        </Card>
-
-        <UpcomingShows events={monthEvents} />
-      </div>
-
-      {/* Tasks + Activities + Finance */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <PendingTasks />
-        <RecentActivities />
-        {canViewFinancialTotals && <FinanceQuickCard />}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((s) => (
+          <Card key={s.label} className="p-5 border bg-card/80">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${s.bg}`}>
+                <s.icon className={`h-5 w-5 ${s.color}`} />
+              </div>
+              <div>
+                <div className="text-3xl font-bold tracking-tight">{s.value}</div>
+                <div className="text-sm text-muted-foreground">{s.label}</div>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
