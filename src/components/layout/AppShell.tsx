@@ -7,6 +7,7 @@ import { useOrg } from "@/providers/OrgProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  LayoutDashboard,
   Handshake,
   LogOut,
   MessageCircle,
