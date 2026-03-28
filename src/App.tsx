@@ -12,7 +12,6 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
 
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,15 +33,6 @@ const App = () => (
                   <Route path="inbox" element={<WhatsAppInboxPage />} />
                 </Route>
               </Route>
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </OrgProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
 
               <Route path="*" element={<NotFound />} />
             </Routes>
