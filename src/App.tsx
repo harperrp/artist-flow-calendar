@@ -24,30 +24,25 @@ const App = () => (
         <OrgProvider>
           <BrowserRouter>
             <Routes>
-              {/* Landing Page */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
 
-              {/* Protected App Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/app" element={<AppShell />}>
-                  <Route index element={<DashboardPage />} />
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="artist" element={<ArtistDashboardPage />} />
-                  <Route path="calendar" element={<ArtistCalendarPage />} />
+                  <Route index element={<LeadsPage />} />
                   <Route path="leads" element={<LeadsPage />} />
-                  <Route path="whatsapp" element={<WhatsAppInboxPage />} />
-                  <Route path="contracts" element={<ContractsCrudPage />} />
-                  <Route path="contacts" element={<ContactsPage />} />
-                  
-                  <Route path="tasks" element={<TasksPage />} />
-                  <Route path="team" element={<TeamPage />} />
-                  <Route path="users" element={<UsersPage />} />
-                  <Route path="map" element={<MapViewPage />} />
-                  <Route path="financial" element={<FinancialPage />} />
-                  <Route path="admin" element={<SuperAdminPage />} />
+                  <Route path="inbox" element={<WhatsAppInboxPage />} />
                 </Route>
               </Route>
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </OrgProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
               <Route path="*" element={<NotFound />} />
             </Routes>
