@@ -21,6 +21,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 const navItems = [
   { to: "/app/leads", icon: Handshake, label: "Leads" },
   { to: "/app/inbox", icon: MessageCircle, label: "Inbox" },
+  { to: "/app/whatsapp", icon: Settings, label: "WhatsApp" },
 ];
 
 export function AppShell() {
