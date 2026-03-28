@@ -32,6 +32,7 @@ const App = () => (
                   <Route index element={<LeadsPage />} />
                   <Route path="leads" element={<LeadsPage />} />
                   <Route path="inbox" element={<WhatsAppInboxPage />} />
+                  <Route path="whatsapp" element={<WhatsAppSettingsPage />} />
                 </Route>
               </Route>
 
