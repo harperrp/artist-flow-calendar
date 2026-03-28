@@ -168,10 +168,25 @@ export function LeadsPage() {
         </div>
       </DragDropContext>
 
-      <LeadDialog open={dialogOpen} onOpenChange={setDialogOpen} onResult={(data) => {
-        if (!data) return;
+      <LeadDialog open={dialogOpen} onOpenChange={setDialogOpen} onResult={async (data) => {
+        if (!data) { setDialogOpen(false); return; }
+        const user = (await supabase.auth.getUser()).data.user;
+        if (!user || !activeOrgId) return;
+        const { error } = await supabase.from("leads").insert({
+          organization_id: activeOrgId,
+          created_by: user.id,
+          contractor_name: data.contractor_name,
+          contact_phone: data.contact_phone || null,
+          contact_email: data.contact_email || null,
+          city: data.city || null,
+          state: data.state || null,
+          stage: "Novo" as any,
+          fee: data.fee ? Number(data.fee) : null,
+          notes: data.notes || null,
+        });
+        if (error) { toast.error("Erro ao criar lead"); return; }
+        toast.success("Lead criado");
         setDialogOpen(false);
-        // Lead creation is handled inside LeadDialog or via the existing hooks
         qc.invalidateQueries({ queryKey: ["leads", activeOrgId] });
       }} />
     </div>
