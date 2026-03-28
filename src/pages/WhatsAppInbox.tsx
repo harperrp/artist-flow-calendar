@@ -115,7 +115,7 @@ function ConversationList({
                         {lead.stage || "—"}
                       </Badge>
                       {(lead.unread_count ?? 0) > 0 && (
-                        <Badge className="text-[9px] px-1.5 py-0 h-4 bg-green-600">
+                        <Badge className="text-[9px] px-1.5 py-0 h-4 bg-primary">
                           {lead.unread_count}
                         </Badge>
                       )}
