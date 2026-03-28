@@ -168,7 +168,12 @@ export function LeadsPage() {
         </div>
       </DragDropContext>
 
-      <LeadDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <LeadDialog open={dialogOpen} onOpenChange={setDialogOpen} onResult={(data) => {
+        if (!data) return;
+        setDialogOpen(false);
+        // Lead creation is handled inside LeadDialog or via the existing hooks
+        qc.invalidateQueries({ queryKey: ["leads", activeOrgId] });
+      }} />
     </div>
   );
 }
