@@ -1,186 +1,122 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOrg } from "@/providers/OrgProvider";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  CalendarDays,
   Handshake,
-  FileText,
   LogOut,
-  LayoutDashboard,
-  Map,
-  DollarSign,
-  Users,
-  UsersRound,
-  UserCog,
-  ListChecks,
+  MessageCircle,
   Menu,
   X,
-  Music,
-  Crown,
-  MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
-import { QuickAddMenu } from "./QuickAddMenu";
-import { NotificationBell } from "./NotificationBell";
+import { NavLink } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { GlobalSearch } from "@/components/ui/global-search";
 
-function TopNavItem({
-  to,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-          isActive
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-        )
-      }
-    >
-      <Icon className="h-4 w-4" />
-      <span>{label}</span>
-    </NavLink>
-  );
-}
+const navItems = [
+  { to: "/app/leads", icon: Handshake, label: "Leads" },
+  { to: "/app/inbox", icon: MessageCircle, label: "Inbox" },
+];
 
 export function AppShell() {
   const { user } = useAuth();
   const { profile } = useOrg();
-  const { role, roleLabel, canViewFinancialTotals, canManageLeads, isArtista } = useUserRole();
-  const { isSuperAdmin } = useSuperAdmin();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const allNavItems = [
-    { to: "/app/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/artist", icon: Music, label: "Painel Artista", roles: ["artista", "admin"] },
-    { to: "/app/calendar", icon: CalendarDays, label: "Agenda", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/leads", icon: Handshake, label: "Leads", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/whatsapp", icon: MessageCircle, label: "WhatsApp", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/contracts", icon: FileText, label: "Contratos", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/contacts", icon: Users, label: "Contatos", roles: ["admin", "comercial", "financeiro"] },
-    
-    { to: "/app/tasks", icon: ListChecks, label: "Tarefas", roles: ["admin", "comercial", "financeiro", "artista"] },
-    { to: "/app/team", icon: UsersRound, label: "Equipe", roles: ["admin"] },
-    { to: "/app/users", icon: UserCog, label: "Usuários", roles: ["admin"] },
-    { to: "/app/map", icon: Map, label: "Mapa", roles: ["admin", "comercial", "financeiro"] },
-    { to: "/app/financial", icon: DollarSign, label: "Financeiro", roles: ["admin", "financeiro"] },
-  ];
-
-  const navItems = allNavItems.filter((item) => item.roles.includes(role));
-
-  // Add super admin link if user is super admin
-  if (isSuperAdmin) {
-    navItems.push({ to: "/app/admin", icon: Crown, label: "Super Admin", roles: ["admin"] });
-  }
+  const { roleLabel } = useUserRole();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              RL
-            </div>
-            <div className="hidden sm:block">
-              <div className="text-sm font-semibold tracking-tight flex items-center gap-2">
-                CRM Rodrigo Lopes
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  {roleLabel}
-                </Badge>
-              </div>
-              <div className="truncate text-xs text-muted-foreground">
-                {profile?.display_name ?? profile?.email ?? user?.email ?? ""}
-              </div>
-            </div>
+    <div className="min-h-screen flex bg-background">
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex flex-col border-r bg-card transition-all duration-200 lg:relative",
+          sidebarOpen ? "w-56" : "w-0 lg:w-14",
+          !sidebarOpen && "overflow-hidden lg:overflow-visible"
+        )}
+      >
+        {/* Logo */}
+        <div className="flex h-14 items-center gap-3 border-b px-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
+            RL
           </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => (
-              <TopNavItem key={item.to} {...item} />
-            ))}
-          </nav>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <GlobalSearch />
-            {canManageLeads && <QuickAddMenu />}
-            <NotificationBell />
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden sm:flex"
-              onClick={() => supabase.auth.signOut()}
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+          {sidebarOpen && (
+            <div className="min-w-0">
+              <div className="text-sm font-semibold truncate">CRM</div>
+              <div className="text-[10px] text-muted-foreground truncate">
+                {profile?.display_name ?? user?.email ?? ""}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t bg-background p-4 animate-fade-in">
-            <nav className="grid gap-2">
-              {navItems.map((item) => (
-                <TopNavItem
-                  key={item.to}
-                  {...item}
-                  onClick={() => setMobileMenuOpen(false)}
-                />
-              ))}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="gap-2 mt-2 justify-start"
-                onClick={() => supabase.auth.signOut()}
+        {/* Nav */}
+        <nav className="flex-1 space-y-1 p-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname.startsWith(item.to);
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
               >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-            </nav>
-          </div>
-        )}
-      </header>
+                <item.icon className="h-4 w-4 shrink-0" />
+                {sidebarOpen && <span>{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="border-t p-2 space-y-1">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 text-muted-foreground"
+            onClick={() => supabase.auth.signOut()}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {sidebarOpen && <span>Sair</span>}
+          </Button>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main */}
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="flex h-14 items-center gap-3 border-b px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X className="h-4 w-4 lg:hidden" /> : <Menu className="h-4 w-4" />}
+            <Menu className="h-4 w-4 hidden lg:block" />
+          </Button>
+          <Badge variant="outline" className="text-[10px]">{roleLabel}</Badge>
+        </header>
+
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
