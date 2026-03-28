@@ -11,6 +11,7 @@ import {
   LogOut,
   MessageCircle,
   Menu,
+  Settings,
   X,
 } from "lucide-react";
 import { useState } from "react";
