@@ -1,8 +1,8 @@
 export interface WhatsAppVpsStatus {
   serverOnline: boolean;
   whatsappConnected: boolean;
-  state: string;
-  qrAvailable?: boolean;
+  state: "disconnected" | "connecting" | "qr_ready" | "connected";
+  qrAvailable: boolean;
   message?: string;
 }
 
@@ -11,122 +11,67 @@ export interface WhatsAppVpsSendPayload {
   text: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 10000;
+// --- MOCK: substituir por chamadas reais ao VPS depois ---
 
-function getServerUrl() {
-  const baseUrl = import.meta.env.VITE_WHATSAPP_SERVER_URL;
-  if (!baseUrl) {
-    throw new Error("Configuração ausente: defina VITE_WHATSAPP_SERVER_URL no ambiente do frontend.");
-  }
-  return baseUrl.replace(/\/$/, "");
+let mockState: WhatsAppVpsStatus = {
+  serverOnline: true,
+  whatsappConnected: false,
+  state: "disconnected",
+  qrAvailable: false,
+};
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export async function getWhatsAppVpsStatus(): Promise<WhatsAppVpsStatus> {
+  await delay(300);
+  return { ...mockState };
 }
 
-async function requestJson(path: string, init?: RequestInit) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${getServerUrl()}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers || {}),
-      },
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} em ${path}`);
-    }
-
-    return response.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+export async function getWhatsAppVpsQrCode(): Promise<string | null> {
+  await delay(400);
+  if (mockState.state !== "qr_ready") return null;
+  // QR placeholder (1x1 transparent png base64)
+  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAVKSURBVHic7d0xbhRBFEXRbkQCOGAHsP91sAPITEACGdnGM/6u6jrnBCO5pfv0V9Xt6fn5+ecXcNPvvz0A7JkgEAQCQSAQBAJBIBAEAkEgEAQCQSAQBAJBIBAEAkEgEAQCQSAQBAJBIBAEAkEgEAQCQSAQBAJBIBAEAkEgEAQCQSAQBAJBIBAEAkEgEAQC4e9fPn96fPz0+cvfngP25n+B/MfPJ+4qEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAh/fv78+VcCi+f8h//gGTzhrgKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCH9ub7+d+EMc+fnE0TzhrgKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCIf+g7+4cOMJ56xwz8ATgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUD4+/j09Levn8/4Ixz5h2c9a/CJQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQBAIBIFAEAgEgUAQCASBQDj0O/axn088YYV7Bp4IBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAIBIJAIAgEgkAgCASCQCAQTvgf/B0+kScceSIQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAKBIBAIAoEgEAgCgSAQCAc=";
 }
 
-function normalizeStatus(raw: any): WhatsAppVpsStatus {
-  const state = String(raw?.state || raw?.session || raw?.status || "").toLowerCase();
-
-  const stateImpliesOnline = ["ok", "connected", "qr_ready", "starting", "disconnected", "open", "close", "session_open"].includes(state);
-  const stateImpliesConnected = ["connected", "open", "session_open"].includes(state);
-
-  const online =
-    raw?.serverOnline ??
-    raw?.online ??
-    raw?.ok ??
-    stateImpliesOnline;
-
-  const connected =
-    raw?.whatsappConnected ??
-    raw?.connected ??
-    raw?.isConnected ??
-    stateImpliesConnected;
-
-  const qrAvailable =
-    raw?.qrAvailable ??
-    Boolean(raw?.qrCode || raw?.qr || raw?.image || raw?.data);
-
-  return {
-    serverOnline: Boolean(online),
-    whatsappConnected: Boolean(connected),
-    state: state || (connected ? "connected" : "disconnected"),
-    qrAvailable: Boolean(qrAvailable),
-    message: raw?.message,
+export async function connectWhatsAppVps(): Promise<WhatsAppVpsStatus> {
+  await delay(800);
+  mockState = {
+    serverOnline: true,
+    whatsappConnected: false,
+    state: "qr_ready",
+    qrAvailable: true,
+    message: "QR Code gerado. Escaneie com o WhatsApp.",
   };
+  // Simula conexão após 8s
+  setTimeout(() => {
+    mockState = {
+      serverOnline: true,
+      whatsappConnected: true,
+      state: "connected",
+      qrAvailable: false,
+      message: "WhatsApp conectado com sucesso.",
+    };
+  }, 8000);
+  return { ...mockState };
 }
 
-export async function getWhatsAppVpsStatus() {
-  const endpoints = ["/status", "/health", "/session/status"];
-
-  for (const endpoint of endpoints) {
-    try {
-      const data = await requestJson(endpoint);
-      return normalizeStatus(data);
-    } catch {
-      // Tenta o próximo endpoint para manter compatibilidade com variações do servidor VPS.
-    }
-  }
-
-  throw new Error("Servidor VPS indisponível ou endpoint de status não encontrado.");
-}
-
-export async function getWhatsAppVpsQrCode() {
-  const endpoints = ["/qr", "/session/qr"];
-
-  for (const endpoint of endpoints) {
-    try {
-      const data = await requestJson(endpoint);
-      const rawQr = data?.qr || data?.qrCode || data?.image || data?.data;
-      if (!rawQr) return null;
-      return String(rawQr).startsWith("data:image") ? String(rawQr) : `data:image/png;base64,${rawQr}`;
-    } catch {
-      // Mantém fallback entre endpoints conhecidos do Baileys.
-    }
-  }
-
-  return null;
+export async function disconnectWhatsAppVps(): Promise<WhatsAppVpsStatus> {
+  await delay(500);
+  mockState = {
+    serverOnline: true,
+    whatsappConnected: false,
+    state: "disconnected",
+    qrAvailable: false,
+    message: "Sessão encerrada.",
+  };
+  return { ...mockState };
 }
 
 export async function sendWhatsAppVpsMessage(payload: WhatsAppVpsSendPayload) {
-  const endpoints = ["/send-message", "/message/send"];
-
-  for (const endpoint of endpoints) {
-    try {
-      const data = await requestJson(endpoint, {
-        method: "POST",
-        body: JSON.stringify({
-          phone: payload.phone,
-          number: payload.phone,
-          text: payload.text,
-          message: payload.text,
-        }),
-      });
-      return data;
-    } catch {
-      // Mantém fallback para rotas alternativas sem impactar o fluxo Cloud API.
-    }
+  await delay(600);
+  if (!mockState.whatsappConnected) {
+    throw new Error("WhatsApp não está conectado.");
   }
-
-  throw new Error("Falha ao enviar mensagem pelo servidor VPS.");
+  return { success: true, messageId: crypto.randomUUID() };
 }
