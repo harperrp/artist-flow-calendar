@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
 import { WhatsAppSettingsPage } from "@/pages/WhatsAppSettings";
+import { DashboardPage } from "@/pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +30,7 @@ const App = () => (
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/app" element={<AppShell />}>
-                  <Route index element={<LeadsPage />} />
+                  <Route index element={<DashboardPage />} />
                   <Route path="leads" element={<LeadsPage />} />
                   <Route path="inbox" element={<WhatsAppInboxPage />} />
                   <Route path="whatsapp" element={<WhatsAppSettingsPage />} />
