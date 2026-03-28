@@ -30,7 +30,7 @@ const App = () => (
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/app" element={<AppShell />}>
-                  <Route index element={<LeadsPage />} />
+                  <Route index element={<DashboardPage />} />
                   <Route path="leads" element={<LeadsPage />} />
                   <Route path="inbox" element={<WhatsAppInboxPage />} />
                   <Route path="whatsapp" element={<WhatsAppSettingsPage />} />
