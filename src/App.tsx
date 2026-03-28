@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { WhatsAppInboxPage } from "@/pages/WhatsAppInbox";
+import { WhatsAppSettingsPage } from "@/pages/WhatsAppSettings";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
                   <Route index element={<LeadsPage />} />
                   <Route path="leads" element={<LeadsPage />} />
                   <Route path="inbox" element={<WhatsAppInboxPage />} />
+                  <Route path="whatsapp" element={<WhatsAppSettingsPage />} />
                 </Route>
               </Route>
 
